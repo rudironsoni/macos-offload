@@ -242,6 +242,7 @@ private final class ProcessOutputCapture: @unchecked Sendable {
     private let lock = NSLock()
     private var stdoutData = Data()
     private var stderrData = Data()
+    private var shouldStop = false
 
     init(stdout: Pipe, stderr: Pipe) {
         self.stdout = stdout
@@ -251,31 +252,69 @@ private final class ProcessOutputCapture: @unchecked Sendable {
     func start() {
         group.enter()
         DispatchQueue.global(qos: .utility).async { [self] in
-            let data = stdout.fileHandleForReading.readDataToEndOfFile()
-            lock.withLock {
-                stdoutData = data
-            }
+            drain(
+                descriptor: stdout.fileHandleForReading.fileDescriptor,
+                append: { self.stdoutData.append($0) }
+            )
             group.leave()
         }
 
         group.enter()
         DispatchQueue.global(qos: .utility).async { [self] in
-            let data = stderr.fileHandleForReading.readDataToEndOfFile()
-            lock.withLock {
-                stderrData = data
-            }
+            drain(
+                descriptor: stderr.fileHandleForReading.fileDescriptor,
+                append: { self.stderrData.append($0) }
+            )
             group.leave()
         }
     }
 
     func finish() -> (stdout: Data, stderr: Data) {
-        if group.wait(timeout: .now() + 1) == .timedOut {
-            stdout.fileHandleForReading.closeFile()
-            stderr.fileHandleForReading.closeFile()
-            group.wait()
+        lock.withLock {
+            shouldStop = true
         }
+        group.wait()
+        stdout.fileHandleForReading.closeFile()
+        stderr.fileHandleForReading.closeFile()
         return lock.withLock {
             (stdoutData, stderrData)
+        }
+    }
+
+    private func drain(
+        descriptor: Int32,
+        append: @escaping (Data) -> Void
+    ) {
+        let originalFlags = fcntl(descriptor, F_GETFL)
+        if originalFlags >= 0 {
+            _ = fcntl(descriptor, F_SETFL, originalFlags | O_NONBLOCK)
+        }
+
+        var buffer = [UInt8](repeating: 0, count: 65_536)
+        while true {
+            let byteCount = read(descriptor, &buffer, buffer.count)
+            if byteCount > 0 {
+                let chunk = Data(buffer.prefix(Int(byteCount)))
+                lock.withLock {
+                    append(chunk)
+                }
+                continue
+            }
+            if byteCount == 0 {
+                return
+            }
+            if errno == EINTR {
+                continue
+            }
+            guard errno == EAGAIN || errno == EWOULDBLOCK else {
+                return
+            }
+            if lock.withLock({ shouldStop }) {
+                return
+            }
+
+            var descriptorState = pollfd(fd: descriptor, events: Int16(POLLIN | POLLHUP), revents: 0)
+            _ = poll(&descriptorState, 1, 100)
         }
     }
 }
