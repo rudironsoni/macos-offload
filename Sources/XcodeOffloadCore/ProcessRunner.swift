@@ -44,6 +44,8 @@ public extension CommandRunning {
 }
 
 public struct SystemCommandRunner: CommandRunning {
+    private static let spawnLock = NSLock()
+
     public init() {}
 
     public func run(
@@ -84,18 +86,27 @@ public struct SystemCommandRunner: CommandRunning {
             mergedEnvironment[key] = value
         }
 
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-        let capture = ProcessOutputCapture(stdout: stdoutPipe, stderr: stderrPipe)
-        let processID = try spawnProcessGroup(
-            executable: executable,
-            arguments: arguments,
-            environment: mergedEnvironment,
-            stdoutPipe: stdoutPipe,
-            stderrPipe: stderrPipe
-        )
-        stdoutPipe.fileHandleForWriting.closeFile()
-        stderrPipe.fileHandleForWriting.closeFile()
+        let spawned = try Self.spawnLock.withLock {
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
+            try markCloseOnExec(stdoutPipe)
+            try markCloseOnExec(stderrPipe)
+            let processID = try spawnProcessGroup(
+                executable: executable,
+                arguments: arguments,
+                environment: mergedEnvironment,
+                stdoutPipe: stdoutPipe,
+                stderrPipe: stderrPipe
+            )
+            stdoutPipe.fileHandleForWriting.closeFile()
+            stderrPipe.fileHandleForWriting.closeFile()
+            return (
+                processID,
+                ProcessOutputCapture(stdout: stdoutPipe, stderr: stderrPipe)
+            )
+        }
+        let processID = spawned.0
+        let capture = spawned.1
         capture.start()
 
         var status: Int32 = 0
@@ -201,6 +212,20 @@ public struct SystemCommandRunner: CommandRunning {
         return processID
     }
 
+    private func markCloseOnExec(_ pipe: Pipe) throws {
+        for descriptor in [
+            pipe.fileHandleForReading.fileDescriptor,
+            pipe.fileHandleForWriting.fileDescriptor
+        ] {
+            guard fcntl(descriptor, F_SETFD, FD_CLOEXEC) == 0 else {
+                throw CommandError(
+                    "cannot mark process pipe close-on-exec: \(String(cString: strerror(errno)))",
+                    exitCode: 71
+                )
+            }
+        }
+    }
+
     private func processExitCode(_ status: Int32) -> Int32 {
         let signal = status & 0x7f
         if signal == 0 {
@@ -244,7 +269,11 @@ private final class ProcessOutputCapture: @unchecked Sendable {
     }
 
     func finish() -> (stdout: Data, stderr: Data) {
-        group.wait()
+        if group.wait(timeout: .now() + 1) == .timedOut {
+            stdout.fileHandleForReading.closeFile()
+            stderr.fileHandleForReading.closeFile()
+            group.wait()
+        }
         return lock.withLock {
             (stdoutData, stderrData)
         }

@@ -48,3 +48,18 @@ import Testing
     #expect(result.stderr.contains("command timed out after 0.05 seconds"))
     #expect(Date().timeIntervalSince(startedAt) < 2)
 }
+
+@Test func systemCommandRunnerDoesNotWaitForAnEscapedDescendantHoldingOutputPipes() throws {
+    let startedAt = Date()
+    let result = try SystemCommandRunner().run(
+        "/usr/bin/perl",
+        arguments: [
+            "-e",
+            "if (fork() == 0) { setpgrp(0, 0); sleep 3; exit 0; } exit 0;"
+        ],
+        timeoutSeconds: 1
+    )
+
+    #expect(result.exitCode == 0)
+    #expect(Date().timeIntervalSince(startedAt) < 2)
+}
