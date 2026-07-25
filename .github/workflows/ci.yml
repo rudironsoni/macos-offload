@@ -28,9 +28,25 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Test process supervision
-        timeout-minutes: 5
-        run: swift test --filter systemCommandRunner
+      - name: Test successful process output
+        timeout-minutes: 2
+        run: swift test --filter systemCommandRunnerPreservesSuccessfulTimedCommandOutput
+
+      - name: Test large process output
+        timeout-minutes: 2
+        run: swift test --filter systemCommandRunnerDrainsOutputLargerThanPipeBuffer
+
+      - name: Test process timeout
+        timeout-minutes: 2
+        run: swift test --filter systemCommandRunnerReturnsTimeoutWithoutWaitingForProcessExit
+
+      - name: Test descendant process-group timeout
+        timeout-minutes: 2
+        run: swift test --filter systemCommandRunnerTimeoutTerminatesDescendantProcessGroup
+
+      - name: Test detached process output
+        timeout-minutes: 2
+        run: swift test --filter systemCommandRunnerDoesNotWaitForAnEscapedDescendantHoldingOutputPipes
 
       - name: Test remaining suite
         timeout-minutes: 5
