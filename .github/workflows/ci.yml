@@ -28,8 +28,13 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Test
-        run: swift test
+      - name: Test process supervision
+        timeout-minutes: 5
+        run: swift test --filter systemCommandRunner
+
+      - name: Test remaining suite
+        timeout-minutes: 5
+        run: swift test --skip systemCommandRunner
 
       - name: Guard against machine-specific defaults
         run: make check-no-machine-defaults
