@@ -1,3 +1,14 @@
+## [0.3.2](https://github.com/rudironsoni/xcode-offload/compare/v0.3.1...v0.3.2) (2026-07-25)
+
+
+### Bug Fixes
+
+* enforce simulator command timeouts ([f86af09](https://github.com/rudironsoni/xcode-offload/commit/f86af09625f2c068ae0f586c1dbc27249bb009a6))
+* make simulator mounts self-reconciling ([97ec2c0](https://github.com/rudironsoni/xcode-offload/commit/97ec2c064c52d026b7aa2713dc540c36e71c2dee))
+* make subprocess output capture portable ([39191e4](https://github.com/rudironsoni/xcode-offload/commit/39191e42a460bb1ad2626a196220bdf1938ae960))
+* prevent subprocess pipe inheritance ([30959ac](https://github.com/rudironsoni/xcode-offload/commit/30959acf6434ef776298373d4f161f523c580cac))
+* route derived data through mounted apple path ([6e2c5ab](https://github.com/rudironsoni/xcode-offload/commit/6e2c5ab401756d9e588b65420dddc07442e2d5d1))
+
 ## [0.3.1](https://github.com/rudironsoni/xcode-offload/compare/v0.3.0...v0.3.1) (2026-07-05)
 
 
