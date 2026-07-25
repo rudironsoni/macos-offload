@@ -1,6 +1,6 @@
 # xcode-offload
 
-`xcode-offload` moves Xcode and CoreSimulator storage to an external volume without changing the paths Apple tools expect. It is for Macs where Xcode, simulators, DerivedData, archives, and CoreSimulator caches are eating internal disk.
+`xcode-offload` moves user-owned Xcode and CoreSimulator storage to an external volume without changing the paths Apple tools expect. CoreSimulator system paths stay on the internal volume so simulator startup does not depend on a root daemon accessing removable storage.
 
 The tool mounts APFS sparsebundles at normal Apple paths. It does not use symlinks for managed paths.
 
@@ -24,10 +24,7 @@ brew install xcode-offload
 - `~/Library/Developer/CoreSimulator/Devices`
 - `~/Library/Developer/Xcode/DerivedData`
 - `~/Library/Developer/Xcode/Archives`
-- `/Library/Developer/CoreSimulator/Caches`
-- `/Library/Developer/CoreSimulator/Images`
-- `/Library/Developer/CoreSimulator/Volumes`
-- `/Applications/Xcodes`
+- Xcode applications stored directly under the external Xcode root
 - optional `xcrun`, `simctl`, and `xcodebuild` shims for explicit flag routing
 
 The storage root is your choice:
@@ -68,14 +65,6 @@ xcode-offload repair \
   --load
 ```
 
-Install the root-owned CoreSimulator cache helper:
-
-```sh
-sudo xcode-offload daemon install \
-  --root "$XCODE_OFFLOAD_ROOT" \
-  --home "$HOME"
-```
-
 Check the result:
 
 ```sh
@@ -96,12 +85,6 @@ xcode-offload mounts install \
   --scope user \
   --load
 
-sudo xcode-offload mounts install \
-  --root "$XCODE_OFFLOAD_ROOT" \
-  --home "$HOME" \
-  --scope system \
-  --load
-
 xcode-offload mounts status \
   --root "$XCODE_OFFLOAD_ROOT" \
   --home "$HOME" \
@@ -113,7 +96,7 @@ Default command output is concise. It shows the human-readable steps and status 
 `mounts install` rejects symlinked Apple paths. It also refuses to detach a mount that belongs to another backend. If a managed directory already contains data, the tool moves that data under:
 
 ```text
-$XCODE_OFFLOAD_ROOT/Xcode/Backups/mounts/<timestamp>/
+$XCODE_OFFLOAD_ROOT/Xcode/UserBackups/mounts/<timestamp>/
 ```
 
 It never deletes backups for you.
@@ -128,16 +111,22 @@ xcode-offload mounts verify \
   --mode user
 ```
 
-System verification is gated because it can touch privileged launchd state:
+`--mode e2e` can also recreate a disposable simulator, but only when `--allow-sim-delete` is set.
+
+## Retire Legacy System Mounts
+
+Older releases installed root LaunchDaemons for CoreSimulator system paths. Retire both historical jobs without detaching an active runtime parent:
 
 ```sh
-sudo xcode-offload mounts verify \
-  --scratch-root "/Volumes/YourExternalVolume/xcode-offload-verify" \
-  --mode system \
-  --allow-system
+sudo xcode-offload mounts uninstall \
+  --root "$XCODE_OFFLOAD_ROOT" \
+  --home "$HOME" \
+  --scope system \
+  --unload \
+  --on-reboot
 ```
 
-`--mode e2e` can also recreate a disposable simulator, but only when `--allow-sim-delete` is set.
+Restart once, then run `doctor --strict`. The legacy sparsebundles remain untouched on the external volume for recovery, but they are no longer mounted.
 
 ## Simulator Recovery
 
@@ -174,11 +163,9 @@ xcode-offload sim reset \
 xcode-offload doctor
 xcode-offload repair
 xcode-offload init
-xcode-offload mount devices|caches
-xcode-offload unmount devices|caches
+xcode-offload mount devices
+xcode-offload unmount devices
 xcode-offload install-shims
-xcode-offload daemon install
-xcode-offload launchd install
 xcode-offload mounts install|repair|status|verify|uninstall
 xcode-offload xcodes install-profile|doctor|env
 xcode-offload sim runtimes|devices|recreate|reset|verify|open

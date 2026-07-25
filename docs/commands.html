@@ -72,11 +72,11 @@
           <code>init</code> creates the directory layout and sparsebundles. Use <code>--no-create-images</code> when you only want the directory layout.
         </p>
 
-        <h2>Mount legacy stores</h2>
-        <pre><code>xcode-offload mount devices|caches [--root PATH] [--dry-run] [--verbose]
-xcode-offload unmount devices|caches [--root PATH] [--dry-run] [--verbose]</code></pre>
+        <h2>Mount the device store</h2>
+        <pre><code>xcode-offload mount devices [--root PATH] [--dry-run] [--verbose]
+xcode-offload unmount devices [--root PATH] [--dry-run] [--verbose]</code></pre>
         <p>
-          These commands manage the device and cache sparsebundles used by the repair flow.
+          These compatibility commands manage the user-owned device sparsebundle. System cache mounts are retired.
         </p>
 
         <h2>Install shims</h2>
@@ -86,18 +86,16 @@ xcode-offload unmount devices|caches [--root PATH] [--dry-run] [--verbose]</code
         </p>
 
         <h2>Launchd</h2>
-        <pre><code>xcode-offload daemon install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
-xcode-offload launchd install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
-xcode-offload install-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-xcode-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--dry-run] [--verbose]</code></pre>
+        <pre><code>xcode-offload install-launchd [--root PATH] [--home PATH] [--scope user|all] [--load] [--dry-run] [--verbose]
+xcode-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]</code></pre>
         <p>
-          <code>daemon install</code> and <code>launchd install</code> are the normal names for the system helper install. <code>install-launchd</code> and <code>uninstall-launchd</code> remain available for lower-level launchd work.
+          The supported job is the persistent user mount agent. Historical root jobs can only be removed with the system scope and <code>--on-reboot</code>.
         </p>
 
         <h2>APFS mount manager</h2>
         <pre><code>xcode-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
 xcode-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-xcode-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--dry-run] [--verbose]
+xcode-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
 xcode-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
 xcode-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]</code></pre>
 

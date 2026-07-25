@@ -52,19 +52,18 @@
           <li>Set <code>XCODE_OFFLOAD_ROOT</code> to a path on that volume.</li>
           <li>Run <code>repair --dry-run</code> and read the human-readable plan.</li>
           <li>Run user repair with <code>--load</code>.</li>
-          <li>Install the system daemon with sudo.</li>
+          <li>Retire any legacy system daemon, then restart once.</li>
           <li>Run <code>doctor --strict</code>.</li>
         </ol>
         <pre><code>export XCODE_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
 xcode-offload repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --install-shims --dry-run
 xcode-offload repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --install-shims --load
-sudo xcode-offload daemon install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME"
+sudo xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --unload --on-reboot
 xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --require-shims --strict</code></pre>
 
         <h2>Enable APFS mount mode</h2>
         <pre><code>xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --dry-run
 xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-sudo xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --load
 xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
         <p>
           Normal output is intentionally short. Add <code>--verbose</code> to install, repair, uninstall, or status commands when you need the raw command list or every individual mount check.
@@ -108,8 +107,11 @@ xcode-offload sim reset \
         <h2>Back out user mount mode</h2>
         <pre><code>xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --unload</code></pre>
 
-        <h2>Back out system mount mode</h2>
-        <pre><code>sudo xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --unload</code></pre>
+        <h2>Retire legacy system mount mode</h2>
+        <pre><code>sudo xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --unload --on-reboot</code></pre>
+        <p>
+          This removes both historical root jobs without detaching a parent that may contain an active CoreSimulator runtime mount. Restart to release the old sparsebundles safely.
+        </p>
       </section>
     </main>
 

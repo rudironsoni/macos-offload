@@ -25,11 +25,11 @@ public struct XcodesCompatibilityActions {
         var actions = try MountActions(runner: runner, fileManager: fileManager).install(
             config: config,
             toolPath: toolPath,
-            scope: .all,
+            scope: .user,
             load: load,
             dryRun: dryRun
         )
-        actions.append(contentsOf: try installEnvironment(directory: config.mountXcodeAppsMount, dryRun: dryRun))
+        actions.append(contentsOf: try installEnvironment(directory: config.xcodeRoot, dryRun: dryRun))
 
         if !dryRun {
             let report = doctor(config: config, requireXcodes: false, strict: false)
@@ -58,10 +58,10 @@ public struct XcodesCompatibilityActions {
     }
 
     public func doctor(config: StorageConfig, requireXcodes: Bool, strict: Bool) -> DoctorReport {
-        var checks = xcodeAppsMountChecks(config: config)
+        var checks = [pathExists(config.xcodeRoot, label: "External Xcode applications directory exists")]
         checks.append(xcodesExecutableCheck(requireXcodes: requireXcodes))
-        checks.append(xcodesDirectoryEnvironmentCheck(expectedDirectory: config.mountXcodeAppsMount, strict: strict))
-        checks.append(xcodeSelectCheck(expectedDirectory: config.mountXcodeAppsMount, strict: strict))
+        checks.append(xcodesDirectoryEnvironmentCheck(expectedDirectory: config.xcodeRoot, strict: strict))
+        checks.append(xcodeSelectCheck(expectedDirectory: config.xcodeRoot, strict: strict))
         checks.append(appleToolCheck(executable: "/usr/bin/xcrun", arguments: ["-f", "xcodebuild"], label: "xcrun resolves xcodebuild"))
         checks.append(appleToolCheck(executable: "/usr/bin/xcodebuild", arguments: ["-version"], label: "xcodebuild responds"))
         checks.append(simctlRuntimeCheck())
@@ -69,10 +69,10 @@ public struct XcodesCompatibilityActions {
         return DoctorReport(checks: checks)
     }
 
-    private func xcodeAppsMountChecks(config: StorageConfig) -> [DoctorCheck] {
-        MountActions(runner: runner, fileManager: fileManager)
-            .mountChecks(config: config, scope: .system, includeLaunchd: false)
-            .filter { $0.label.contains("Mount xcode-apps ") }
+    private func pathExists(_ path: String, label: String) -> DoctorCheck {
+        fileManager.fileExists(atPath: path)
+            ? DoctorCheck(.pass, label, detail: path)
+            : DoctorCheck(.fail, label.replacingOccurrences(of: " exists", with: " missing"), detail: path)
     }
 
     private func xcodesExecutableCheck(requireXcodes: Bool) -> DoctorCheck {

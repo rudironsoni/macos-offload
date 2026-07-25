@@ -17,10 +17,10 @@ import Testing
         dryRun: true
     )
 
-    #expect(actions.contains { $0.contains("hdiutil create") && $0.contains("XcodeApps.sparsebundle") && $0.contains("-fs APFS") })
-    #expect(actions.contains { $0.contains("hdiutil attach") && $0.contains("/Applications/Xcodes") })
-    #expect(actions.contains("/bin/launchctl setenv XCODES_DIRECTORY /Applications/Xcodes"))
-    #expect(actions.contains("export XCODES_DIRECTORY=/Applications/Xcodes"))
+    #expect(!actions.contains { $0.contains("XcodeApps.sparsebundle") })
+    #expect(!actions.contains { $0.contains("/Applications/Xcodes") })
+    #expect(actions.contains("/bin/launchctl setenv XCODES_DIRECTORY \(config.xcodeRoot)"))
+    #expect(actions.contains("export XCODES_DIRECTORY=\(config.xcodeRoot)"))
     #expect(!actions.contains { $0.contains("install-shims") || $0.contains("wrap-xcrun") || $0.contains("wrap-xcodebuild") })
 }
 
@@ -32,25 +32,8 @@ import Testing
 
     let runner = XcodesCompatibilityRunner { executable, arguments, _ in
         switch (executable, arguments) {
-        case ("/sbin/mount", _):
-            return ProcessResult(
-                exitCode: 0,
-                stdout: "/dev/disk1s1 on \(config.mountXcodeAppsMount) (apfs, local, nodev, nosuid, journaled, nobrowse)\n",
-                stderr: ""
-            )
-        case ("/usr/bin/hdiutil", ["info"]):
-            return ProcessResult(
-                exitCode: 0,
-                stdout: """
-                image-path      : \(config.mountXcodeAppsImage)
-                /dev/disk1s1\t41504653-0000-11AA-AA11-00306543ECAC\t\(config.mountXcodeAppsMount)
-                """,
-                stderr: ""
-            )
-        case ("/usr/sbin/diskutil", ["info", config.mountXcodeAppsMount]):
-            return ProcessResult(exitCode: 0, stdout: "File System Personality: APFS\nOwners: Enabled\n", stderr: "")
         case ("/usr/bin/xcode-select", ["-p"]):
-            return ProcessResult(exitCode: 0, stdout: "\(config.mountXcodeAppsMount)/Xcode.app/Contents/Developer\n", stderr: "")
+            return ProcessResult(exitCode: 0, stdout: "\(config.xcodeRoot)/Xcode.app/Contents/Developer\n", stderr: "")
         case ("/usr/bin/xcrun", ["-f", "xcodebuild"]):
             return ProcessResult(exitCode: 0, stdout: "/usr/bin/xcodebuild\n", stderr: "")
         case ("/usr/bin/xcodebuild", ["-version"]):
@@ -66,13 +49,13 @@ import Testing
 
     let report = XcodesCompatibilityActions(
         runner: runner,
-        environment: ["XCODES_DIRECTORY": config.mountXcodeAppsMount, "PATH": "/usr/bin:/bin"]
+        environment: ["XCODES_DIRECTORY": config.xcodeRoot, "PATH": "/usr/bin:/bin"]
     ).doctor(config: config, requireXcodes: false, strict: false)
 
     #expect(report.passed)
     #expect(report.warningCount == 1)
     #expect(report.checks.contains { $0.status == .warn && $0.label == "xcodes executable is optional" })
-    #expect(report.checks.contains { $0.status == .pass && $0.label == "Mount xcode-apps is mounted at /Applications/Xcodes" })
+    #expect(report.checks.contains { $0.status == .pass && $0.label == "External Xcode applications directory exists" })
     #expect(report.checks.contains { $0.status == .pass && $0.label == "simctl runtimes has available runtimes" })
 }
 

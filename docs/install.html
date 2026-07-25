@@ -82,13 +82,6 @@ xcode-offload version</code></pre>
         </p>
 
         <h2>Install the system helper</h2>
-        <pre><code>sudo xcode-offload daemon install \
-  --root "$XCODE_OFFLOAD_ROOT" \
-  --home "$HOME"</code></pre>
-        <p>
-          <code>daemon install</code> and <code>launchd install</code> install the same system LaunchDaemon and helper.
-        </p>
-
         <h2>Run the doctor</h2>
         <pre><code>xcode-offload doctor \
   --root "$XCODE_OFFLOAD_ROOT" \
@@ -100,11 +93,10 @@ xcode-offload version</code></pre>
           For direct mounts at the Apple paths, use the <code>mounts</code> group:
         </p>
         <pre><code>xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-sudo xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --load
 xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
 
         <div class="note">
-          Keep the external volume mounted before opening Xcode or Simulator. If the volume is missing, launchd can only log the missing root and try again later.
+          Keep the external volume mounted before opening Xcode or Simulator. The wrappers fail closed while it is absent, and the user agent reconciles automatically when the configured volume returns.
         </div>
       </section>
     </main>

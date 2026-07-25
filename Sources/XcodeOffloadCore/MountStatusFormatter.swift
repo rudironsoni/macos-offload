@@ -2,6 +2,10 @@ import Foundation
 
 public enum MountStatusFormatter {
     public static func messages(for report: MountStatusReport) -> [String] {
+        if let lifecycle = report.lifecycle, lifecycle.state != .ready {
+            let detail = lifecycle.lastError.map { ": \($0)" } ?? ""
+            return ["FAIL mount lifecycle \(lifecycle.state.rawValue)\(detail)"]
+        }
         let problemChecks = report.checks.filter { $0.status != .pass }
         if !problemChecks.isEmpty {
             return problemChecks.map(\.humanLine)

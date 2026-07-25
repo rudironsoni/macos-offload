@@ -3,13 +3,21 @@ import Foundation
 
 public struct MountStatusReport: Codable, Equatable, Sendable {
     public let checks: [DoctorCheck]
+    public let lifecycle: MountLifecycleSnapshot?
 
     public var passed: Bool {
         checks.allSatisfy { $0.status != .fail }
+            && lifecycle.map { $0.state == .ready } != false
     }
 
     public var failureCount: Int {
         checks.filter { $0.status == .fail }.count
+            + (lifecycle.map { $0.state == .ready ? 0 : 1 } ?? 0)
+    }
+
+    public init(checks: [DoctorCheck], lifecycle: MountLifecycleSnapshot? = nil) {
+        self.checks = checks
+        self.lifecycle = lifecycle
     }
 }
 
@@ -23,14 +31,21 @@ public struct MountActions {
     }
 
     public func install(config: StorageConfig, toolPath: String, scope: LaunchdScope, load: Bool, dryRun: Bool) throws -> [String] {
+        if scope == .system {
+            throw CommandError(
+                "system mounts are retired because CoreSimulator system paths must remain on the internal volume",
+                exitCode: 78
+            )
+        }
+        if scope == .all, legacySystemIsActive(config: config) {
+            throw CommandError(
+                "legacy system mounts are still active; retire them with mounts uninstall --scope system --unload --on-reboot, then restart",
+                exitCode: 78
+            )
+        }
         try preflight(scope: scope, dryRun: dryRun)
         var actions: [String] = []
-        let mounts = ManagedMounts.matching(scope: scope, config: config)
-        actions.append(contentsOf: try createSparsebundles(mounts: mounts, dryRun: dryRun))
-        actions.append(contentsOf: try mount(mounts: mounts, config: config, dryRun: dryRun))
-        if includesSystemMounts(scope) {
-            actions.append(contentsOf: try scanAndMountRuntimes(dryRun: dryRun))
-        }
+        actions.append(contentsOf: try reconcile(config: config, dryRun: dryRun, createImages: true))
         actions.append(contentsOf: try installLaunchd(config: config, toolPath: toolPath, scope: scope, load: load, dryRun: dryRun))
         return actions
     }
@@ -39,8 +54,92 @@ public struct MountActions {
         try install(config: config, toolPath: toolPath, scope: scope, load: load, dryRun: dryRun)
     }
 
-    public func uninstall(config: StorageConfig, scope: LaunchdScope, unload: Bool, dryRun: Bool) throws -> [String] {
-        try preflight(scope: scope, dryRun: dryRun)
+    public func reconcile(
+        config: StorageConfig,
+        dryRun: Bool,
+        createImages: Bool = false
+    ) throws -> [String] {
+        if dryRun {
+            return try reconcileUnlocked(
+                config: config,
+                dryRun: true,
+                createImages: createImages
+            )
+        }
+
+        return try MountLifecycleFiles.withLock(config: config, fileManager: fileManager) {
+            do {
+                let volumeUUID = try verifyRootIdentity(config: config)
+                try writeLifecycleSnapshot(
+                    snapshot: MountLifecycleSnapshot(
+                        state: .reconciling,
+                        rootPath: config.root,
+                        volumeUUID: volumeUUID,
+                        mountedIDs: []
+                    ),
+                    config: config
+                )
+                let actions = try reconcileUnlocked(
+                    config: config,
+                    dryRun: false,
+                    createImages: createImages
+                )
+                let mountedIDs = try verifiedMountedIDs(config: config)
+                try writeLifecycleSnapshot(
+                    snapshot: MountLifecycleSnapshot(
+                        state: .ready,
+                        rootPath: config.root,
+                        volumeUUID: volumeUUID,
+                        mountedIDs: mountedIDs
+                    ),
+                    config: config
+                )
+                return actions
+            } catch {
+                let message = (error as? CommandError)?.message ?? error.localizedDescription
+                let state: MountLifecycleState
+                if message.contains("not available") {
+                    state = .waitingForVolume
+                } else if message.contains("UUID") {
+                    state = .blockedWrongVolume
+                } else if message.contains("different backend") {
+                    state = .blockedWrongBackend
+                } else {
+                    state = .failed
+                }
+                try? writeLifecycleSnapshot(
+                    snapshot: MountLifecycleSnapshot(
+                        state: state,
+                        rootPath: config.root,
+                        volumeUUID: nil,
+                        mountedIDs: [],
+                        lastError: message
+                    ),
+                    config: config
+                )
+                throw error
+            }
+        }
+    }
+
+    public func uninstall(
+        config: StorageConfig,
+        scope: LaunchdScope,
+        unload: Bool,
+        onReboot: Bool = false,
+        dryRun: Bool
+    ) throws -> [String] {
+        if scope == .system || scope == .all {
+            guard onReboot else {
+                throw CommandError(
+                    "system mounts must be retired with --on-reboot so active CoreSimulator runtime mounts are never detached",
+                    exitCode: 78
+                )
+            }
+            if !dryRun, geteuid() != 0 {
+                throw CommandError("system mount retirement requires root", exitCode: 77)
+            }
+        }
         var actions: [String] = []
 
         if scope == .user || scope == .all {
@@ -60,27 +159,39 @@ public struct MountActions {
         if scope == .system || scope == .all {
             if unload {
                 actions.append("launchctl bootout system \(config.mountSystemLaunchDaemonPath.shellQuoted) || true")
+                actions.append("launchctl bootout system \(config.systemLaunchDaemonPath.shellQuoted) || true")
                 if !dryRun {
                     _ = try? runner.run("/bin/launchctl", arguments: ["bootout", "system", config.mountSystemLaunchDaemonPath], environment: [:])
+                    _ = try? runner.run("/bin/launchctl", arguments: ["bootout", "system", config.systemLaunchDaemonPath], environment: [:])
                 }
             }
             actions.append("rm -f \(config.mountSystemLaunchDaemonPath.shellQuoted)")
             actions.append("rm -f \(config.mountSystemHelperPath.shellQuoted)")
+            actions.append("rm -f \(config.systemLaunchDaemonPath.shellQuoted)")
+            actions.append("rm -f \(config.cacheHelperPath.shellQuoted)")
+            actions.append("restart required to release retired system sparsebundles safely")
             if !dryRun {
                 try? fileManager.removeItem(atPath: config.mountSystemLaunchDaemonPath)
                 try? fileManager.removeItem(atPath: config.mountSystemHelperPath)
+                try? fileManager.removeItem(atPath: config.systemLaunchDaemonPath)
+                try? fileManager.removeItem(atPath: config.cacheHelperPath)
             }
         }
 
-        for managedMount in ManagedMounts.matching(scope: scope, config: config) {
-            actions.append(contentsOf: try unmount(managedMount: managedMount, dryRun: dryRun))
+        if scope == .user || scope == .all {
+            for managedMount in ManagedMounts.user(config: config) {
+                actions.append(contentsOf: try unmount(managedMount: managedMount, dryRun: dryRun))
+            }
         }
 
         return actions
     }
 
     public func status(config: StorageConfig, scope: LaunchdScope) -> MountStatusReport {
-        MountStatusReport(checks: mountChecks(config: config, scope: scope, includeLaunchd: true))
+        MountStatusReport(
+            checks: mountChecks(config: config, scope: scope, includeLaunchd: true),
+            lifecycle: MountLifecycleFiles.loadSnapshot(config: config, fileManager: fileManager)
+        )
     }
 
     public func mountChecks(config: StorageConfig, scope: LaunchdScope, includeLaunchd: Bool) -> [DoctorCheck] {
@@ -103,12 +214,68 @@ public struct MountActions {
                 checks.append(pathExists(config.mountUserLaunchAgentPath, label: "Mount user LaunchAgent exists"))
             }
             if scope == .system || scope == .all {
-                checks.append(pathExists(config.mountSystemLaunchDaemonPath, label: "Mount system LaunchDaemon exists"))
-                checks.append(executableExists(config.mountSystemHelperPath, label: "Mount system helper exists"))
+                checks.append(contentsOf: legacySystemChecks(config: config, hdiutilOutput: hdiutilOutput))
             }
         }
 
         return checks
+    }
+
+    private func legacySystemChecks(config: StorageConfig, hdiutilOutput: String) -> [DoctorCheck] {
+        var checks = [
+            pathAbsent(config.mountSystemLaunchDaemonPath, label: "Legacy mount system LaunchDaemon is absent"),
+            pathAbsent(config.mountSystemHelperPath, label: "Legacy mount system helper is absent"),
+            pathAbsent(config.systemLaunchDaemonPath, label: "Legacy cache LaunchDaemon is absent"),
+            pathAbsent(config.cacheHelperPath, label: "Legacy cache helper is absent")
+        ]
+        for managedMount in ManagedMounts.legacySystem(config: config) {
+            let attached = TextParsers.hdiutilInfoContains(
+                imagePath: managedMount.imagePath,
+                mountPoint: managedMount.mountPoint,
+                in: hdiutilOutput
+            )
+            checks.append(
+                attached
+                    ? DoctorCheck(
+                        .fail,
+                        "Legacy system mount \(managedMount.id) is detached",
+                        detail: "restart after retiring the system LaunchDaemons"
+                    )
+                    : DoctorCheck(.pass, "Legacy system mount \(managedMount.id) is detached")
+            )
+        }
+        return checks
+    }
+
+    private func legacySystemIsActive(config: StorageConfig) -> Bool {
+        let paths = [
+            config.mountSystemLaunchDaemonPath,
+            config.mountSystemHelperPath,
+            config.systemLaunchDaemonPath,
+            config.cacheHelperPath
+        ]
+        if paths.contains(where: fileManager.fileExists(atPath:)) {
+            return true
+        }
+        let hdiutilOutput = (try? runner.run(
+            "/usr/bin/hdiutil",
+            arguments: ["info"],
+            environment: [:],
+            timeoutSeconds: 30
+        ))?.stdout ?? ""
+        return ManagedMounts.legacySystem(config: config).contains { managedMount in
+            TextParsers.hdiutilInfoContains(
+                imagePath: managedMount.imagePath,
+                mountPoint: managedMount.mountPoint,
+                in: hdiutilOutput
+            )
+        }
+    }
+
+    private func pathAbsent(_ path: String, label: String) -> DoctorCheck {
+        fileManager.fileExists(atPath: path)
+            ? DoctorCheck(.fail, label, detail: path)
+            : DoctorCheck(.pass, label, detail: path)
     }
 
     private func createSparsebundles(mounts: [ManagedMount], dryRun: Bool) throws -> [String] {
@@ -135,13 +302,147 @@ public struct MountActions {
         return actions
     }
 
-    private func mount(mounts: [ManagedMount], config: StorageConfig, dryRun: Bool) throws -> [String] {
+    private func reconcileUnlocked(
+        config: StorageConfig,
+        dryRun: Bool,
+        createImages: Bool
+    ) throws -> [String] {
+        let mounts = ManagedMounts.user(config: config)
+        var actions: [String] = []
+        if createImages {
+            actions.append(contentsOf: try createSparsebundles(mounts: mounts, dryRun: dryRun))
+        } else {
+            for managedMount in mounts where !fileManager.fileExists(atPath: managedMount.imagePath) {
+                throw CommandError("missing sparsebundle: \(managedMount.imagePath)", exitCode: 78)
+            }
+        }
+        actions.append(
+            contentsOf: try mount(
+                mounts: mounts,
+                config: config,
+                allowBackup: createImages,
+                dryRun: dryRun
+            )
+        )
+        return actions
+    }
+
+    private func verifyRootIdentity(config: StorageConfig) throws -> String {
+        guard fileManager.fileExists(atPath: config.root) else {
+            throw CommandError("configured external root is not available: \(config.root)", exitCode: 69)
+        }
+
+        let result = try runner.run(
+            "/usr/sbin/diskutil",
+            arguments: ["info", config.root],
+            environment: [:],
+            timeoutSeconds: 30
+        )
+        let detectedUUID = TextParsers.volumeUUID(fromDiskutilInfo: result.stdout)
+            ?? (config.root.hasPrefix("/Volumes/") ? nil : "local:\(config.root)")
+        guard result.succeeded, let detectedUUID, !detectedUUID.isEmpty else {
+            throw CommandError("cannot determine external volume UUID for \(config.root)", exitCode: 69)
+        }
+
+        if let expected = try MountLifecycleFiles.loadConfiguration(config: config, fileManager: fileManager) {
+            guard expected.schemaVersion == 1 else {
+                throw CommandError(
+                    "unsupported mount configuration schema version: \(expected.schemaVersion)",
+                    exitCode: 78
+                )
+            }
+            guard expected.rootPath == config.root else {
+                throw CommandError(
+                    "configured external root mismatch: expected \(expected.rootPath), found \(config.root)",
+                    exitCode: 78
+                )
+            }
+            guard expected.volumeUUID == detectedUUID else {
+                throw CommandError(
+                    "external volume UUID mismatch at \(config.root): expected \(expected.volumeUUID), found \(detectedUUID)",
+                    exitCode: 78
+                )
+            }
+            return detectedUUID
+        }
+
+        try MountLifecycleFiles.write(
+            configuration: MountConfiguration(rootPath: config.root, volumeUUID: detectedUUID),
+            config: config,
+            fileManager: fileManager
+        )
+        return detectedUUID
+    }
+
+    private func verifiedMountedIDs(config: StorageConfig) throws -> [String] {
+        let mountResult = try runner.run(
+            "/sbin/mount",
+            arguments: [],
+            environment: [:],
+            timeoutSeconds: 30
+        )
+        let hdiutilResult = try runner.run(
+            "/usr/bin/hdiutil",
+            arguments: ["info"],
+            environment: [:],
+            timeoutSeconds: 30
+        )
+        guard mountResult.succeeded, hdiutilResult.succeeded else {
+            throw CommandError("cannot verify reconciled mount state", exitCode: 69)
+        }
+
+        var mountedIDs: [String] = []
+        for managedMount in ManagedMounts.user(config: config) {
+            guard TextParsers.mountLine(for: managedMount.mountPoint, in: mountResult.stdout) != nil else {
+                throw CommandError("mount did not appear after reconciliation: \(managedMount.mountPoint)", exitCode: 69)
+            }
+            guard TextParsers.hdiutilInfoContains(
+                imagePath: managedMount.imagePath,
+                mountPoint: managedMount.mountPoint,
+                in: hdiutilResult.stdout
+            ) else {
+                throw CommandError(
+                    "mountpoint is mounted from a different backend: \(managedMount.mountPoint)",
+                    exitCode: 78
+                )
+            }
+            mountedIDs.append(managedMount.id)
+        }
+        return mountedIDs
+    }
+
+    private func writeLifecycleSnapshot(
+        snapshot: MountLifecycleSnapshot,
+        config: StorageConfig
+    ) throws {
+        if let previous = MountLifecycleFiles.loadSnapshot(config: config, fileManager: fileManager),
+           previous.state == snapshot.state,
+           previous.rootPath == snapshot.rootPath,
+           previous.volumeUUID == snapshot.volumeUUID,
+           previous.mountedIDs == snapshot.mountedIDs,
+           previous.lastError == snapshot.lastError {
+            return
+        }
+        try MountLifecycleFiles.write(
+            snapshot: snapshot,
+            config: config,
+            fileManager: fileManager
+        )
+    }
+
+    private func mount(
+        mounts: [ManagedMount],
+        config: StorageConfig,
+        allowBackup: Bool,
+        dryRun: Bool
+    ) throws -> [String] {
         var actions: [String] = []
         for managedMount in mounts {
             actions.append(
                 contentsOf: try mount(
                     managedMount: managedMount,
                     backupRoot: backupRoot(for: managedMount, config: config),
+                    allowBackup: allowBackup,
                     dryRun: dryRun
                 )
             )
@@ -149,7 +450,12 @@ public struct MountActions {
         return actions
     }
 
-    private func mount(managedMount: ManagedMount, backupRoot: String, dryRun: Bool) throws -> [String] {
+    private func mount(
+        managedMount: ManagedMount,
+        backupRoot: String,
+        allowBackup: Bool,
+        dryRun: Bool
+    ) throws -> [String] {
         try rejectSymlink(managedMount.mountPoint)
 
         if isMounted(managedMount.mountPoint) {
@@ -165,7 +471,14 @@ public struct MountActions {
         }
 
         var actions = try detachStaleAttachments(for: managedMount, dryRun: dryRun)
-        actions.append(contentsOf: try prepareMountpoint(managedMount, backupRoot: backupRoot, dryRun: dryRun))
+        actions.append(
+            contentsOf: try prepareMountpoint(
+                managedMount,
+                backupRoot: backupRoot,
+                allowBackup: allowBackup,
+                dryRun: dryRun
+            )
+        )
         let command = [
             "/usr/bin/hdiutil",
             "attach",
@@ -223,7 +536,12 @@ public struct MountActions {
         return [command.map(\.shellQuoted).joined(separator: " ")]
     }
 
-    private func prepareMountpoint(_ managedMount: ManagedMount, backupRoot: String, dryRun: Bool) throws -> [String] {
+    private func prepareMountpoint(
+        _ managedMount: ManagedMount,
+        backupRoot: String,
+        allowBackup: Bool,
+        dryRun: Bool
+    ) throws -> [String] {
         let parent = URL(fileURLWithPath: managedMount.mountPoint).deletingLastPathComponent().path
         var actions = ["mkdir -p \(parent.shellQuoted)"]
         if !dryRun {
@@ -233,6 +551,12 @@ public struct MountActions {
         if fileManager.fileExists(atPath: managedMount.mountPoint) {
             let contents = (try? fileManager.contentsOfDirectory(atPath: managedMount.mountPoint)) ?? []
             if !contents.isEmpty {
+                guard allowBackup else {
+                    throw CommandError(
+                        "refusing runtime reconciliation because mountpoint contains data: \(managedMount.mountPoint)",
+                        exitCode: 78
+                    )
+                }
                 let backupDirectory = "\(backupRoot)/\(timestamp())/\(managedMount.id)"
                 let manifest = "\(backupDirectory).manifest"
                 actions.append("mkdir -p \(URL(fileURLWithPath: backupDirectory).deletingLastPathComponent().path.shellQuoted)")
@@ -330,38 +654,6 @@ public struct MountActions {
                 if !dryRun {
                     _ = try? runner.run("/bin/launchctl", arguments: ["bootout", "gui/\(uid)", config.mountUserLaunchAgentPath], environment: [:])
                     try runOrThrow(["/bin/launchctl", "bootstrap", "gui/\(uid)", config.mountUserLaunchAgentPath])
-                }
-            }
-        }
-
-        if scope == .system || scope == .all {
-            let helperDirectory = URL(fileURLWithPath: config.mountSystemHelperPath).deletingLastPathComponent().path
-            let daemonDirectory = URL(fileURLWithPath: config.mountSystemLaunchDaemonPath).deletingLastPathComponent().path
-            actions.append("mkdir -p \(helperDirectory.shellQuoted) \(daemonDirectory.shellQuoted)")
-            actions.append("write \(config.mountSystemHelperPath.shellQuoted)")
-            actions.append("chown root:wheel \(config.mountSystemHelperPath.shellQuoted)")
-            actions.append("chmod 0755 \(config.mountSystemHelperPath.shellQuoted)")
-            actions.append("write \(config.mountSystemLaunchDaemonPath.shellQuoted)")
-            actions.append("chown root:wheel \(config.mountSystemLaunchDaemonPath.shellQuoted)")
-            actions.append("chmod 0644 \(config.mountSystemLaunchDaemonPath.shellQuoted)")
-            if !dryRun {
-                try validatePlist(templates.systemDaemonPlist, name: "mount system LaunchDaemon")
-                try fileManager.createDirectory(atPath: helperDirectory, withIntermediateDirectories: true)
-                try fileManager.createDirectory(atPath: daemonDirectory, withIntermediateDirectories: true)
-                try templates.systemHelper.write(toFile: config.mountSystemHelperPath, atomically: true, encoding: .utf8)
-                try templates.systemDaemonPlist.write(toFile: config.mountSystemLaunchDaemonPath, atomically: true, encoding: .utf8)
-                try runOrThrow(["/usr/sbin/chown", "root:wheel", config.mountSystemHelperPath])
-                try runOrThrow(["/bin/chmod", "0755", config.mountSystemHelperPath])
-                try runOrThrow(["/usr/sbin/chown", "root:wheel", config.mountSystemLaunchDaemonPath])
-                try runOrThrow(["/bin/chmod", "0644", config.mountSystemLaunchDaemonPath])
-            }
-
-            if load {
-                actions.append("launchctl bootout system \(config.mountSystemLaunchDaemonPath.shellQuoted) || true")
-                actions.append("launchctl bootstrap system \(config.mountSystemLaunchDaemonPath.shellQuoted)")
-                if !dryRun {
-                    _ = try? runner.run("/bin/launchctl", arguments: ["bootout", "system", config.mountSystemLaunchDaemonPath], environment: [:])
-                    try runOrThrow(["/bin/launchctl", "bootstrap", "system", config.mountSystemLaunchDaemonPath])
                 }
             }
         }
@@ -493,24 +785,12 @@ public struct MountActions {
         }
     }
 
-    private func includesSystemMounts(_ scope: LaunchdScope) -> Bool {
-        scope == .system || scope == .all
-    }
-
-    private func scanAndMountRuntimes(dryRun: Bool) throws -> [String] {
-        let command = ["/usr/bin/xcrun", "simctl", "runtime", "scan-and-mount"]
-        if !dryRun {
-            try runOrThrow(command)
-        }
-        return [command.map(\.shellQuoted).joined(separator: " ")]
-    }
-
     private func isSymlink(_ path: String) -> Bool {
         (try? fileManager.destinationOfSymbolicLink(atPath: path)) != nil
     }
 
     private func preflight(scope: LaunchdScope, dryRun: Bool) throws {
-        guard !dryRun, scope == .system || scope == .all else {
+        guard !dryRun, scope == .system else {
             return
         }
         guard geteuid() == 0 else {

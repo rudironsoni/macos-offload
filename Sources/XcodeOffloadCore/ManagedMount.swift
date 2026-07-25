@@ -1,5 +1,11 @@
 import Foundation
 
+public enum LaunchdScope: String, Sendable {
+    case user
+    case system
+    case all
+}
+
 public enum MountScope: String, Codable, Sendable {
     case user
     case system
@@ -46,7 +52,7 @@ public struct ManagedMount: Codable, Equatable, Sendable {
 
 public enum ManagedMounts {
     public static func all(config: StorageConfig) -> [ManagedMount] {
-        user(config: config) + system(config: config)
+        user(config: config)
     }
 
     public static func matching(scope: LaunchdScope, config: StorageConfig) -> [ManagedMount] {
@@ -54,7 +60,7 @@ public enum ManagedMounts {
         case .user:
             return user(config: config)
         case .system:
-            return system(config: config)
+            return []
         case .all:
             return all(config: config)
         }
@@ -95,7 +101,12 @@ public enum ManagedMounts {
         ]
     }
 
+    @available(*, deprecated, message: "System-owned CoreSimulator mounts are retired. Use legacySystem(config:) only for cleanup.")
     public static func system(config: StorageConfig) -> [ManagedMount] {
+        legacySystem(config: config)
+    }
+
+    public static func legacySystem(config: StorageConfig) -> [ManagedMount] {
         [
             ManagedMount(
                 id: "caches",

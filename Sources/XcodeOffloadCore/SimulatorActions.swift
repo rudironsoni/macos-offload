@@ -28,14 +28,25 @@ public struct SimulatorActions {
     ) throws -> [String] {
         var actions: [String] = []
 
-        _ = try? runner.run("/usr/bin/xcrun", arguments: ["simctl", "shutdown", name], environment: [:])
-        _ = try? runner.run("/usr/bin/xcrun", arguments: ["simctl", "delete", name], environment: [:])
+        _ = try? runner.run(
+            "/usr/bin/xcrun",
+            arguments: ["simctl", "shutdown", name],
+            environment: [:],
+            timeoutSeconds: 60
+        )
+        _ = try? runner.run(
+            "/usr/bin/xcrun",
+            arguments: ["simctl", "delete", name],
+            environment: [:],
+            timeoutSeconds: 60
+        )
         actions.append("xcrun simctl delete \(name.shellQuoted)")
 
         let createResult = try runner.run(
             "/usr/bin/xcrun",
             arguments: ["simctl", "create", name, deviceType, runtime],
-            environment: [:]
+            environment: [:],
+            timeoutSeconds: 60
         )
         guard createResult.succeeded else {
             throw CommandError(nonEmptyOutput(from: createResult), exitCode: createResult.exitCode)
@@ -175,7 +186,8 @@ public struct SimulatorActions {
         let openResult = try runner.run(
             "/usr/bin/open",
             arguments: ["-a", "Simulator", "--args", "-CurrentDeviceUDID", device.udid],
-            environment: [:]
+            environment: [:],
+            timeoutSeconds: 30
         )
         guard openResult.succeeded else {
             throw CommandError(nonEmptyOutput(from: openResult), exitCode: openResult.exitCode)
@@ -185,7 +197,8 @@ public struct SimulatorActions {
         let activateResult = try runner.run(
             "/usr/bin/osascript",
             arguments: ["-e", "tell application \"Simulator\" to activate"],
-            environment: [:]
+            environment: [:],
+            timeoutSeconds: 30
         )
         guard activateResult.succeeded else {
             throw CommandError(nonEmptyOutput(from: activateResult), exitCode: activateResult.exitCode)
@@ -234,7 +247,12 @@ public struct SimulatorActions {
     }
 
     private func runSimctl(_ arguments: [String]) throws -> String {
-        let result = try runner.run("/usr/bin/xcrun", arguments: ["simctl"] + arguments, environment: [:])
+        let result = try runner.run(
+            "/usr/bin/xcrun",
+            arguments: ["simctl"] + arguments,
+            environment: [:],
+            timeoutSeconds: 30
+        )
         guard result.succeeded else {
             throw CommandError(nonEmptyOutput(from: result), exitCode: result.exitCode)
         }

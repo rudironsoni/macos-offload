@@ -141,6 +141,26 @@ public struct StorageConfig: Codable, Equatable, Sendable {
     public var mountXcodeAppsMount: String {
         "/Applications/Xcodes"
     }
+
+    public var applicationSupportDirectory: String {
+        "\(home)/Library/Application Support/xcode-offload"
+    }
+
+    public var mountConfigurationPath: String {
+        "\(applicationSupportDirectory)/mounts.json"
+    }
+
+    public var mountStatePath: String {
+        "\(applicationSupportDirectory)/mount-state.json"
+    }
+
+    public var mountLockPath: String {
+        "\(applicationSupportDirectory)/mounts.lock"
+    }
+
+    public var xcodeApplicationsDirectory: String {
+        xcodeRoot
+    }
 }
 
 public enum RootResolver {

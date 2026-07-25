@@ -65,8 +65,8 @@ import Testing
         dryRun: true
     )
 
-    #expect(plan.contains("write /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.device-store.plist"))
-    #expect(plan.contains("launchctl bootstrap gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.device-store.plist"))
+    #expect(plan.contains("write /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.mounts-user.plist"))
+    #expect(plan.contains("launchctl bootstrap gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.mounts-user.plist"))
 }
 
 @Test func uninstallLaunchdDryRunPlansBothScopes() throws {
@@ -86,19 +86,19 @@ import Testing
     #expect(plan.contains("rm -f /Library/PrivilegedHelperTools/io.github.rudironsoni.xcode-offload.mount-coresimulator-caches"))
 }
 
-@Test func systemLaunchdDryRunCreatesPrivilegedTargetDirectories() throws {
+@Test func systemLaunchdDryRunIsRetired() throws {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
     let actions = StorageActions(runner: StubRunner(results: [:]))
 
-    let plan = try actions.installLaunchd(
-        config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
-        scope: .system,
-        load: false,
-        dryRun: true
-    )
-
-    #expect(plan.contains("mkdir -p /Library/PrivilegedHelperTools /Library/LaunchDaemons"))
+    #expect(throws: CommandError.self) {
+        _ = try actions.installLaunchd(
+            config: config,
+            toolPath: "/opt/homebrew/bin/xcode-offload",
+            scope: .system,
+            load: false,
+            dryRun: true
+        )
+    }
 }
 
 private struct StubRunner: CommandRunning {

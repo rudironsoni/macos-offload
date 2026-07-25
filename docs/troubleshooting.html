@@ -56,7 +56,7 @@
         <p>
           Action commands show concise steps by default. Re-run the same command with <code>--verbose</code> to see both the readable summary and the underlying commands sent to macOS tools.
         </p>
-        <pre><code>sudo xcode-offload mounts repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --load --verbose
+        <pre><code>xcode-offload mounts repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load --verbose
 xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all --verbose</code></pre>
 
         <h2>External root is missing</h2>
@@ -92,11 +92,11 @@ xcode-offload sim reset \
           The reset command creates a fresh simulator in the currently mounted device store. Prefer that over migrating or copying old simulator directories.
         </p>
 
-        <h2>CoreSimulator cache is not mounted</h2>
+        <h2>Legacy CoreSimulator system mounts are still active</h2>
         <p>
-          Reload the system daemon, or reinstall it with the current root and home.
+          Retire both historical root jobs without detaching active runtime children, then restart once.
         </p>
-        <pre><code>sudo xcode-offload daemon install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME"
+        <pre><code>sudo xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --unload --on-reboot
 xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --strict</code></pre>
 
         <h2>simctl is slow after a fresh simulator</h2>
@@ -108,7 +108,7 @@ xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --strict</code></pre>
         <p>
           <code>xcode-offload</code> never deletes backups automatically. Review old backup directories after the current mount state is healthy.
         </p>
-        <pre><code>find "$XCODE_OFFLOAD_ROOT/Xcode/Backups/mounts" -maxdepth 2 -type f -name '*.manifest' -print</code></pre>
+        <pre><code>find "$XCODE_OFFLOAD_ROOT/Xcode/UserBackups/mounts" -maxdepth 2 -type f -name '*.manifest' -print</code></pre>
       </section>
     </main>
 

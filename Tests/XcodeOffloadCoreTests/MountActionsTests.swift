@@ -2,17 +2,14 @@ import Foundation
 import Testing
 @testable import XcodeOffloadCore
 
-@Test func managedMountInventoryUsesApplePathsAndExternalSparsebundles() {
+@Test func managedMountInventoryUsesOnlyUserOwnedApplePathsAndExternalSparsebundles() {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
     let mounts = ManagedMounts.all(config: config)
 
-    #expect(mounts.map(\.id) == ["devices", "derived-data", "archives", "caches", "images", "volumes", "xcode-apps"])
-    #expect(mounts.first { $0.id == "images" }?.mountPoint == "/Library/Developer/CoreSimulator/Images")
-    #expect(mounts.first { $0.id == "volumes" }?.mountPoint == "/Library/Developer/CoreSimulator/Volumes")
-    #expect(mounts.first { $0.id == "xcode-apps" }?.mountPoint == "/Applications/Xcodes")
+    #expect(mounts.map(\.id) == ["devices", "derived-data", "archives"])
     #expect(mounts.first { $0.id == "derived-data" }?.mountPoint == "/Users/rudi/Library/Developer/Xcode/DerivedData")
     #expect(mounts.allSatisfy { $0.imagePath.hasPrefix("/Volumes/ExternalXcode/Xcode/") })
-    #expect(mounts.first { $0.id == "images" }?.preparation == .coreSimulatorImages)
+    #expect(ManagedMounts.legacySystem(config: config).map(\.id) == ["caches", "images", "volumes", "xcode-apps"])
 }
 
 @Test func mountInstallDryRunCreatesSparsebundlesAndMountsWithoutSymlinks() throws {
@@ -22,18 +19,16 @@ import Testing
     let actions = try MountActions(runner: MountStubRunner(results: [:])).install(
         config: config,
         toolPath: "/opt/homebrew/bin/xcode-offload",
-        scope: .all,
+        scope: .user,
         load: true,
         dryRun: true
     )
 
-    #expect(actions.contains { $0.contains("hdiutil create") && $0.contains("Images.sparsebundle") && $0.contains("-fs APFS") })
     #expect(actions.contains { $0.contains("hdiutil create") && $0.contains("DerivedData.sparsebundle") && $0.contains("-type SPARSEBUNDLE") })
-    #expect(actions.contains { $0.contains("chmod 1777") && $0.contains("/mnt") })
-    #expect(actions.contains { $0.contains("hdiutil attach") && $0.contains("/Library/Developer/CoreSimulator/Images") })
-    #expect(actions.contains { $0.contains("xcrun") && $0.contains("simctl") && $0.contains("scan-and-mount") })
     #expect(actions.contains { $0 == "write \(config.mountUserLaunchAgentPath)" })
-    #expect(actions.contains { $0 == "write \(config.mountSystemLaunchDaemonPath)" })
+    #expect(!actions.contains { $0.contains("/Library/Developer/CoreSimulator/Images") })
+    #expect(!actions.contains { $0.contains("simctl runtime scan-and-mount") })
+    #expect(!actions.contains { $0 == "write \(config.mountSystemLaunchDaemonPath)" })
     #expect(!actions.contains { $0.localizedCaseInsensitiveContains("ln -s") })
 }
 
@@ -167,104 +162,15 @@ import Testing
     })
 }
 
-@Test func mountLaunchdPlistsPassPlutilLintAndHelpersAvoidSymlinks() throws {
+@Test func mountLaunchdPlistPassesPlutilLintAndRunsPersistentAgent() throws {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
     let templates = MountLaunchdTemplates(config: config, toolPath: "/opt/homebrew/bin/xcode-offload")
 
     try assertPlistLintPasses(templates.userAgentPlist)
-    try assertPlistLintPasses(templates.systemDaemonPlist)
     #expect(templates.userAgentPlist.contains("<string>mounts</string>"))
-    #expect(templates.systemHelper.contains("reject_symlink"))
-    #expect(templates.systemHelper.contains("nested_mounts_under"))
-    #expect(templates.systemHelper.contains("stale_attached_devices"))
-    #expect(templates.systemHelper.contains("detach_stale_attachments"))
-    #expect(templates.systemHelper.contains("mountpoint contains active nested mounts"))
-    #expect(templates.systemHelper.contains(config.mountSystemBackupRoot))
-    #expect(!templates.systemHelper.contains(config.mountUserBackupRoot))
-    #expect(templates.systemHelper.contains("simctl runtime scan-and-mount"))
-    try assertZshSyntaxPasses(templates.systemHelper)
-    #expect(templates.systemHelper.contains("/Library/Developer/CoreSimulator/Images"))
-    #expect(templates.systemHelper.contains("/Library/Developer/CoreSimulator/Volumes"))
-    #expect(templates.systemHelper.contains("/Applications/Xcodes"))
-    #expect(!templates.systemHelper.localizedCaseInsensitiveContains("ln -s"))
-}
-
-@Test func mountSystemHelperKeepsRecordPathsWithSpacesParseable() {
-    let config = StorageConfig(root: "/Volumes/External Xcode", home: "/Users/rudi")
-    let helper = MountLaunchdTemplates(config: config, toolPath: "/opt/homebrew/bin/xcode-offload").systemHelper
-
-    #expect(helper.contains("images=('/Volumes/External Xcode/Xcode/CoreSimulator/Caches.sparsebundle'"))
-    #expect(helper.contains("mountpoints=(/Library/Developer/CoreSimulator/Caches"))
-    #expect(helper.contains("mounted_from_configured_backend"))
-    #expect(helper.contains("detach_stale_attachments"))
-    #expect(helper.contains("already mounted from a different backend"))
-    #expect(helper.contains("trim(value) == image"))
-    #expect(helper.contains("equivalent_path(value, mountpoint)"))
-    #expect(!helper.contains("IFS='|'"))
-    #expect(!helper.contains("index($0, image)"))
-}
-
-@Test func mountRepairSkipsImagesPreparationWhenAlreadyMounted() throws {
-    let root = try temporaryDirectory()
-    let home = try temporaryDirectory()
-    let config = StorageConfig(root: root, home: home)
-    try createMountFixture(config: config)
-
-    let runner = MountStubRunner(results: [
-        "/sbin/mount": ProcessResult(
-            exitCode: 0,
-            stdout: managedMountOutput(config: config),
-            stderr: ""
-        ),
-        "/usr/bin/hdiutil": ProcessResult(
-            exitCode: 0,
-            stdout: mountHdiutilOutput(config: config),
-            stderr: ""
-        )
-    ])
-
-    let actions = try MountActions(runner: runner).repair(
-        config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
-        scope: .system,
-        load: false,
-        dryRun: true
-    )
-
-    #expect(actions.contains("already prepared /Library/Developer/CoreSimulator/Images"))
-    #expect(!actions.contains { $0.contains("/tmp/xcode-offload-images-") && $0.contains("hdiutil attach") })
-}
-
-@Test func mountRepairDetachesStaleImagesBeforePreparingImagesSparsebundle() throws {
-    let root = try temporaryDirectory()
-    let home = try temporaryDirectory()
-    let config = StorageConfig(root: root, home: home)
-    try createMountFixture(config: config)
-
-    let images = try #require(ManagedMounts.all(config: config).first { $0.id == "images" })
-    let hdiutilInfo = """
-    image-path      : \(images.imagePath)
-    /dev/disk10\tGUID_partition_scheme
-    /dev/disk11s1\t41504653-0000-11AA-AA11-00306543ECAC
-    """
-
-    let runner = MountStubRunner(results: [
-        "/sbin/mount": ProcessResult(exitCode: 0, stdout: "", stderr: ""),
-        "/usr/bin/hdiutil": ProcessResult(exitCode: 0, stdout: hdiutilInfo, stderr: "")
-    ])
-
-    let actions = try MountActions(runner: runner).repair(
-        config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
-        scope: .system,
-        load: false,
-        dryRun: true
-    )
-
-    let detachIndex = try #require(actions.firstIndex { $0 == "/usr/bin/hdiutil detach /dev/disk10" })
-    let prepareIndex = try #require(actions.firstIndex { $0.contains("hdiutil attach") && $0.contains(images.imagePath) && $0.contains("xcode-offload-images-") })
-    #expect(detachIndex < prepareIndex)
-    #expect(!actions.contains("/usr/bin/hdiutil detach /dev/disk11s1"))
+    #expect(templates.userAgentPlist.contains("<string>agent</string>"))
+    #expect(templates.userAgentPlist.contains("<key>KeepAlive</key>"))
+    #expect(!templates.userAgentPlist.contains("<key>StartInterval</key>"))
 }
 
 @Test func userMountInstallUsesUserBackupRootForExistingData() throws {
@@ -321,7 +227,7 @@ import Testing
     }
 }
 
-@Test func mountInstallRejectsNestedRuntimeMountBeforeMovingVolumesParent() throws {
+@Test func mountInstallRejectsSystemScopeBeforeInspectingNestedRuntimeMounts() throws {
     let root = try temporaryDirectory()
     let home = try temporaryDirectory()
     let config = StorageConfig(root: root, home: home)
@@ -347,9 +253,7 @@ import Testing
         Issue.record("expected nested runtime mount to be rejected")
     } catch let error as CommandError {
         #expect(error.exitCode == 78)
-        #expect(error.message.contains("mountpoint contains active nested mounts"))
-        #expect(error.message.contains(runtimeMount))
-        #expect(error.message.contains("Shut down simulators"))
+        #expect(error.message.contains("system mounts are retired"))
     }
 }
 

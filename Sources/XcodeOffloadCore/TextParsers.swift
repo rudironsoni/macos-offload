@@ -35,6 +35,10 @@ public enum TextParsers {
         value(forDiskutilKey: "Mount Point", in: output)
     }
 
+    public static func volumeUUID(fromDiskutilInfo output: String) -> String? {
+        value(forDiskutilKey: "Volume UUID", in: output)
+    }
+
     public static func fileSystemPersonality(fromDiskutilInfo output: String) -> String? {
         value(forDiskutilKey: "File System Personality", in: output)
             ?? value(forDiskutilKey: "Type (Bundle)", in: output)

@@ -53,13 +53,10 @@
         <pre><code>/Volumes/YourExternalVolume/Xcode/
   CoreSimulator/
     DeviceSet.sparsebundle
-    Caches.sparsebundle
-    Images.sparsebundle
-    Volumes.sparsebundle
   XcodeDefaults/
     DerivedData.sparsebundle
     Archives.sparsebundle
-  Backups/
+  UserBackups/
     mounts/</code></pre>
 
         <h2>Managed Apple paths</h2>
@@ -71,10 +68,6 @@
             <tr><td><code>~/Library/Developer/CoreSimulator/Devices</code></td><td>User</td><td><code>DeviceSet.sparsebundle</code></td></tr>
             <tr><td><code>~/Library/Developer/Xcode/DerivedData</code></td><td>User</td><td><code>DerivedData.sparsebundle</code></td></tr>
             <tr><td><code>~/Library/Developer/Xcode/Archives</code></td><td>User</td><td><code>Archives.sparsebundle</code></td></tr>
-            <tr><td><code>/Library/Developer/CoreSimulator/Caches</code></td><td>System</td><td><code>Caches.sparsebundle</code></td></tr>
-            <tr><td><code>/Library/Developer/CoreSimulator/Images</code></td><td>System</td><td><code>Images.sparsebundle</code></td></tr>
-            <tr><td><code>/Library/Developer/CoreSimulator/Volumes</code></td><td>System</td><td><code>Volumes.sparsebundle</code></td></tr>
-            <tr><td><code>/Applications/Xcodes</code></td><td>System</td><td><code>XcodeApps.sparsebundle</code></td></tr>
           </tbody>
         </table>
 
@@ -90,12 +83,12 @@
 
         <h2>Launchd responsibilities</h2>
         <p>
-          The user LaunchAgent remounts user-owned paths. The system LaunchDaemon runs a root-owned helper for <code>/Library/Developer/CoreSimulator/*</code>. <code>daemon install</code> and <code>launchd install</code> install the same system job.
+          One persistent user LaunchAgent subscribes to Disk Arbitration events and reconciles the user-owned mounts. CoreSimulator system paths remain internal. No root LaunchDaemon or root <code>simctl</code> process is part of the supported design.
         </p>
 
         <h2>xcodes compatibility</h2>
         <p>
-          The <code>xcodes</code> profile keeps installed Xcode apps under <code>/Applications/Xcodes</code>, backed by APFS. Set <code>XCODES_DIRECTORY</code> to that path so <code>xcodes</code> installs there, then use <code>xcode-select</code> as usual.
+          The <code>xcodes</code> profile keeps installed Xcode apps directly under the external Xcode root. It sets <code>XCODES_DIRECTORY</code> to that directory, then uses <code>xcode-select</code> as usual.
         </p>
 
         <h2>Shims are optional</h2>

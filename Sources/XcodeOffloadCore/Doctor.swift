@@ -70,12 +70,13 @@ public struct Doctor {
         checks.append(pathExists(config.tmp, label: "External tmp root exists"))
         checks.append(tmpWritable(config.tmp))
         checks.append(contentsOf: deviceMountChecks(config: config))
-        checks.append(cacheMountCheck(config: config))
 
         if strict {
             checks.append(contentsOf: strictStorageChecks(config: config))
-            checks.append(contentsOf: strictLaunchdChecks(config: config))
-            checks.append(contentsOf: MountActions(runner: runner, fileManager: fileManager).mountChecks(config: config, scope: .all, includeLaunchd: false))
+            checks.append(
+                contentsOf: MountActions(runner: runner, fileManager: fileManager)
+                    .mountChecks(config: config, scope: .all, includeLaunchd: true)
+            )
         }
 
         if requireShims {
@@ -165,27 +166,12 @@ public struct Doctor {
         return checks
     }
 
-    private func cacheMountCheck(config: StorageConfig) -> DoctorCheck {
-        guard let mountOutput = try? runner.run("/sbin/mount", arguments: [], environment: [:]),
-              mountOutput.succeeded else {
-            return DoctorCheck(.fail, "Could not inspect mounts")
-        }
-
-        guard let mountLine = TextParsers.mountLine(for: config.cacheMount, in: mountOutput.stdout) else {
-            return DoctorCheck(.fail, "CoreSimulator Caches is not mounted at \(config.cacheMount)")
-        }
-
-        return DoctorCheck(.pass, "CoreSimulator Caches is mounted", detail: mountLine)
-    }
-
     private func strictStorageChecks(config: StorageConfig) -> [DoctorCheck] {
         var checks: [DoctorCheck] = []
 
         let hdiutilInfo = hdiutilInfo()
         checks.append(sparsebundleCheck(path: config.deviceStoreImage, label: "DeviceSet sparsebundle", hdiutilInfo: hdiutilInfo))
-        checks.append(sparsebundleCheck(path: config.cacheImage, label: "Cache sparsebundle", hdiutilInfo: hdiutilInfo))
         checks.append(mountedAPFSCheck(mountPoint: config.deviceMount, label: "CoreSimulator Devices filesystem is APFS"))
-        checks.append(mountedAPFSCheck(mountPoint: config.cacheMount, label: "CoreSimulator Caches filesystem is APFS"))
 
         if hdiutilInfo.contains(config.deviceStoreImage) {
             checks.append(DoctorCheck(.pass, "DeviceSet sparsebundle is attached", detail: config.deviceStoreImage))
@@ -193,26 +179,7 @@ public struct Doctor {
             checks.append(DoctorCheck(.fail, "DeviceSet sparsebundle is not attached", detail: config.deviceStoreImage))
         }
 
-        if hdiutilInfo.contains(config.cacheImage) {
-            checks.append(DoctorCheck(.pass, "Cache sparsebundle is attached", detail: config.cacheImage))
-            checks.append(DoctorCheck(.pass, "CoreSimulator Caches uses managed sparsebundle backend", detail: config.cacheImage))
-        } else {
-            checks.append(DoctorCheck(.fail, "CoreSimulator Caches is not attached from configured sparsebundle", detail: config.cacheImage))
-        }
-
         return checks
-    }
-
-    private func strictLaunchdChecks(config: StorageConfig) -> [DoctorCheck] {
-        [
-            pathExists(config.mountUserLaunchAgentPath, label: "Mount user LaunchAgent exists"),
-            pathExists(config.mountSystemLaunchDaemonPath, label: "Mount system LaunchDaemon exists"),
-            executableExists(config.mountSystemHelperPath, label: "Mount system helper exists"),
-            plistLint(path: config.mountUserLaunchAgentPath, label: "Mount user LaunchAgent plist is valid"),
-            plistLint(path: config.mountSystemLaunchDaemonPath, label: "Mount system LaunchDaemon plist is valid"),
-            launchctlCheck(domain: "gui/\(getuid())", label: config.mountUserLaunchAgentLabel, displayName: "Mount user LaunchAgent"),
-            launchctlCheck(domain: "system", label: config.mountSystemLaunchDaemonLabel, displayName: "Mount system LaunchDaemon")
-        ]
     }
 
     private func sparsebundleCheck(path: String, label: String, hdiutilInfo: String) -> DoctorCheck {

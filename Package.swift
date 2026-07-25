@@ -17,7 +17,10 @@ let package = Package(
             dependencies: ["XcodeOffloadCore"]
         ),
         .target(
-            name: "XcodeOffloadCore"
+            name: "XcodeOffloadCore",
+            linkerSettings: [
+                .linkedFramework("DiskArbitration")
+            ]
         ),
         .testTarget(
             name: "XcodeOffloadCoreTests",

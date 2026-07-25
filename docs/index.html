@@ -52,13 +52,13 @@
 
         <h2>Why this exists</h2>
         <p>
-          Xcode installs, simulator device sets, DerivedData, archives, and CoreSimulator caches can take hundreds of gigabytes. Symlinking those folders is fragile, especially around CoreSimulator images and <code>simdiskimaged</code>. This tool uses APFS mounts instead.
+          Xcode installs, simulator device sets, DerivedData, and archives can take hundreds of gigabytes. This tool uses APFS mounts for user-owned paths while CoreSimulator system paths stay on the internal volume.
         </p>
 
         <div class="grid">
           <article class="card">
             <h3>Apple paths stay normal</h3>
-            <p>Tools still see paths such as <code>~/Library/Developer/CoreSimulator/Devices</code> and <code>/Library/Developer/CoreSimulator/Caches</code>.</p>
+            <p>Tools still see normal user paths such as <code>~/Library/Developer/CoreSimulator/Devices</code>.</p>
           </article>
           <article class="card">
             <h3>No symlinked mount parents</h3>
@@ -70,7 +70,7 @@
           </article>
           <article class="card">
             <h3>Repair is repeatable</h3>
-            <p>LaunchAgents, LaunchDaemons, helpers, shims, and mount state are managed by commands you can run again.</p>
+            <p>One user LaunchAgent reconciles UUID-bound mounts from Disk Arbitration events.</p>
           </article>
         </div>
 
@@ -91,10 +91,6 @@ xcode-offload repair \
   --install-shims \
   --load
 
-sudo xcode-offload daemon install \
-  --root "$XCODE_OFFLOAD_ROOT" \
-  --home "$HOME"
-
 xcode-offload doctor \
   --root "$XCODE_OFFLOAD_ROOT" \
   --require-shims \
@@ -105,12 +101,11 @@ xcode-offload doctor \
           Use <code>mounts</code> when you want the default Apple paths backed directly by APFS sparsebundles:
         </p>
         <pre><code>xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-sudo xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --load
 xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
 
         <div class="warning">
-          <strong>Do not symlink CoreSimulator Images or Volumes.</strong>
-          Use mounted APFS sparsebundles. Xcode and <code>simdiskimaged</code> can reject symlinked mount parents.
+          <strong>CoreSimulator system paths stay internal.</strong>
+          Retire legacy root mount jobs with <code>mounts uninstall --scope system --unload --on-reboot</code>, then restart once.
         </div>
       </section>
     </main>

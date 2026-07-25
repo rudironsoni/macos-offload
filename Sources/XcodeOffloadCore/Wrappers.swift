@@ -21,36 +21,17 @@ public struct WrapperRunner {
 
     public func runSimctl(arguments: [String], config: StorageConfig) throws -> Never {
         try prepareEnvironment(config: config)
-        try ensureDeviceStore(config: config)
 
         let result = try runner.run(
             "/usr/bin/xcrun",
             arguments: ["simctl"] + arguments,
-            environment: wrapperEnvironment(config: config)
+            environment: wrapperEnvironment(config: config),
+            timeoutSeconds: 60
         )
 
         if result.succeeded {
             FileHandle.standardOutput.write(Data(result.stdout.utf8))
             throw ExitRequested(code: 0)
-        }
-
-        if TextParsers.containsConnectionFailure(result.stderr),
-           ProcessInfo.processInfo.environment["CODEX_SANDBOX"] != "seatbelt" {
-            _ = try? runner.run(
-                "/usr/bin/pkill",
-                arguments: [
-                    "-f",
-                    "OrlixTestRunner|xctest|testmanagerd|SimLaunchHost|launchd_sim|CoreSimulatorService|/Library/Developer/CoreSimulator/|Simulator.app"
-                ],
-                environment: [:]
-            )
-            sleep(2)
-            try? ensureDeviceStore(config: config)
-            try exec(
-                "/usr/bin/xcrun",
-                arguments: ["simctl"] + arguments,
-                environment: wrapperEnvironment(config: config)
-            )
         }
 
         FileHandle.standardError.write(Data(result.stderr.utf8))
@@ -74,19 +55,11 @@ public struct WrapperRunner {
         )
     }
 
-    private func ensureDeviceStore(config: StorageConfig) throws {
-        let actions = StorageActions(runner: runner, fileManager: fileManager)
-        _ = try actions.initialize(config: config, createImages: false, dryRun: false)
-
-        let mountOutput = try runner.run("/sbin/mount", arguments: [], environment: [:])
-        if TextParsers.mountLine(for: config.deviceMount, in: mountOutput.stdout) != nil {
-            return
-        }
-
-        _ = try actions.mount(.devices, config: config, dryRun: false)
-    }
-
     private func prepareEnvironment(config: StorageConfig) throws {
+        _ = try MountActions(runner: runner, fileManager: fileManager).reconcile(
+            config: config,
+            dryRun: false
+        )
         try fileManager.createDirectory(atPath: config.tmp, withIntermediateDirectories: true)
     }
 

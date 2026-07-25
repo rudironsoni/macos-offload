@@ -157,34 +157,23 @@ smoke-cli:
 	output="$$("$$bin" init --root "$$tmp/External Disk" --dry-run --no-create-images --verbose)"; \
 	require_output "init verbose dry-run" "Commands:" "$$output"; \
 	require_output "init verbose dry-run" "mkdir -p '$$tmp/External Disk/Xcode'" "$$output"; \
-	output="$$("$$bin" daemon install --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run)"; \
-	require_output "daemon install dry-run" "==> Install system LaunchDaemon" "$$output"; \
-	reject_output "daemon install dry-run" "write /Library/LaunchDaemons" "$$output"; \
-	output="$$("$$bin" launchd install --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run)"; \
-	require_output "launchd install dry-run" "==> Install system LaunchDaemon" "$$output"; \
-	reject_output "launchd install dry-run" "write /Library/LaunchDaemons" "$$output"; \
+	expect_failure "$$bin" daemon install --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run; \
+	grep -F "system mounts are retired" "$$tmp/stderr" >/dev/null; \
+	expect_failure "$$bin" launchd install --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run; \
+	grep -F "system mounts are retired" "$$tmp/stderr" >/dev/null; \
 	output="$$("$$bin" mounts install --root "$$tmp/External Disk" --home "$$tmp/Home" --scope user --dry-run)"; \
 	require_output "mounts user install dry-run" "==> Mount Xcode DerivedData" "$$output"; \
 	reject_output "mounts user install dry-run" "DerivedData.sparsebundle" "$$output"; \
 	output="$$("$$bin" mounts install --root "$$tmp/External Disk" --home "$$tmp/Home" --scope user --dry-run --verbose)"; \
 	require_output "mounts user verbose dry-run" "Commands:" "$$output"; \
 	require_output "mounts user verbose dry-run" "DerivedData.sparsebundle" "$$output"; \
-	if "$$bin" mounts install --root "$$tmp/External Disk" --home "$$tmp/Home" --scope system --dry-run >"$$tmp/mounts-system.out" 2>"$$tmp/mounts-system.err"; then \
-	  output="$$(cat "$$tmp/mounts-system.out")"; \
-	  require_output "mounts system install dry-run" "==> Prepare CoreSimulator Images sparsebundle" "$$output"; \
-	  require_output "mounts system install dry-run" "==> Mount Xcode applications" "$$output"; \
-	  reject_output "mounts system install dry-run" "chmod 1777" "$$output"; \
-	else \
-	  grep -F "mountpoint is already mounted from a different backend" "$$tmp/mounts-system.err" >/dev/null; \
-	fi; \
-	if "$$bin" xcodes install-profile --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run >"$$tmp/xcodes-profile.out" 2>"$$tmp/xcodes-profile.err"; then \
-	  output="$$(cat "$$tmp/xcodes-profile.out")"; \
-	  require_output "xcodes profile dry-run" "==> Mount Xcode applications" "$$output"; \
-	  require_output "xcodes profile dry-run" "==> Set XCODES_DIRECTORY for launchd sessions" "$$output"; \
-	  reject_output "xcodes profile dry-run" "XcodeApps.sparsebundle" "$$output"; \
-	else \
-	  grep -F "mountpoint is already mounted from a different backend" "$$tmp/xcodes-profile.err" >/dev/null; \
-	fi; \
+	expect_failure "$$bin" mounts install --root "$$tmp/External Disk" --home "$$tmp/Home" --scope system --dry-run; \
+	grep -F "system mounts are retired" "$$tmp/stderr" >/dev/null; \
+	output="$$("$$bin" xcodes install-profile --root "$$tmp/External Disk" --home "$$tmp/Home" --dry-run)"; \
+	require_output "xcodes profile dry-run" "==> Mount Xcode DerivedData" "$$output"; \
+	require_output "xcodes profile dry-run" "==> Set XCODES_DIRECTORY for launchd sessions" "$$output"; \
+	reject_output "xcodes profile dry-run" "XcodeApps.sparsebundle" "$$output"; \
+	reject_output "xcodes profile dry-run" "/Applications/Xcodes" "$$output"; \
 	output="$$("$$bin" xcodes env install --directory /Applications/Xcodes --dry-run)"; \
 	require_output "xcodes env install dry-run" "export XCODES_DIRECTORY=/Applications/Xcodes" "$$output"; \
 	if "$$bin" doctor --root "$$tmp/missing-root" --skip-simctl --json >"$$tmp/doctor.json" 2>"$$tmp/doctor.err"; then \

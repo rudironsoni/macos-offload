@@ -76,17 +76,10 @@ public struct MountVerification {
                 try runTool(cleanupCommands.removeLast(), toolPath: options.toolPath, event: event)
 
             case .system:
-                guard options.allowSystem else {
-                    throw CommandError("system verification requires --allow-system or XCODE_OFFLOAD_VERIFY_ALLOW_SYSTEM=1", exitCode: 77)
-                }
-                guard geteuid() == 0 else {
-                    throw CommandError("system verification requires root", exitCode: 77)
-                }
-                try runTool(["mounts", "install", "--root", root, "--home", options.home, "--scope", "system", "--dry-run"], toolPath: options.toolPath, event: event)
-                cleanupCommands.append(["mounts", "uninstall", "--root", root, "--home", options.home, "--scope", "system", "--unload"])
-                try runTool(["mounts", "install", "--root", root, "--home", options.home, "--scope", "system", "--load"], toolPath: options.toolPath, event: event)
-                try runTool(["mounts", "status", "--root", root, "--home", options.home, "--scope", "system", "--json"], toolPath: options.toolPath, event: event)
-                try runTool(cleanupCommands.removeLast(), toolPath: options.toolPath, event: event)
+                throw CommandError(
+                    "system mount verification is retired because CoreSimulator system paths must remain on the internal volume",
+                    exitCode: 78
+                )
 
             case .e2e:
                 guard options.allowSimDelete else {

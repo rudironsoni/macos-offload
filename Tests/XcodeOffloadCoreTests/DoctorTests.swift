@@ -35,7 +35,6 @@ import Testing
 
     #expect(report.passed)
     #expect(report.checks.contains(DoctorCheck(.pass, "CoreSimulator Devices uses managed sparsebundle backend", detail: config.deviceStoreImage)))
-    #expect(report.checks.contains { $0.status == .pass && $0.label == "CoreSimulator Caches is mounted" })
 }
 
 @Test func doctorFailsUnsupportedDirectAPFSDeviceStore() throws {
@@ -83,7 +82,7 @@ import Testing
     })
 }
 
-@Test func doctorFailsWhenCacheMountIsMissing() throws {
+@Test func doctorAllowsInternalCoreSimulatorCacheDirectory() throws {
     let root = try temporaryDirectory()
     let home = try temporaryDirectory()
     let config = StorageConfig(root: root, home: home)
@@ -108,8 +107,8 @@ import Testing
         validateSimctl: false
     )
 
-    #expect(!report.passed)
-    #expect(report.checks.contains(DoctorCheck(.fail, "CoreSimulator Caches is not mounted at \(config.cacheMount)")))
+    #expect(report.passed)
+    #expect(!report.checks.contains { $0.label.contains("CoreSimulator Caches") })
 }
 
 @Test func doctorPropagatesSimctlFailureDetail() throws {
