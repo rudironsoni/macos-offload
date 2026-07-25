@@ -44,6 +44,7 @@ jobs:
           echo "checksum=$archive.sha256" >> "$GITHUB_OUTPUT"
 
       - name: Test
+        timeout-minutes: 5
         run: swift test
 
       - name: Guard against machine-specific defaults
