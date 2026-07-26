@@ -1,3 +1,11 @@
+## [0.3.3](https://github.com/rudironsoni/macos-offload/compare/v0.3.2...v0.3.3) (2026-07-26)
+
+
+### Features
+
+* rename the project and executable to macos-offload ([55fe767](https://github.com/rudironsoni/macos-offload/commit/55fe767743a4fa5bd5f2ee3129639ad3f3c3c9f4))
+
+
 ## [0.3.2](https://github.com/rudironsoni/macos-offload/compare/v0.3.1...v0.3.2) (2026-07-25)
 
 
