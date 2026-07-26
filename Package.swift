@@ -3,28 +3,28 @@
 import PackageDescription
 
 let package = Package(
-    name: "xcode-offload",
+    name: "macos-offload",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "xcode-offload", targets: ["XcodeOffloadCLI"]),
-        .library(name: "XcodeOffloadCore", targets: ["XcodeOffloadCore"])
+        .executable(name: "macos-offload", targets: ["MacOSOffloadCLI"]),
+        .library(name: "MacOSOffloadCore", targets: ["MacOSOffloadCore"])
     ],
     targets: [
         .executableTarget(
-            name: "XcodeOffloadCLI",
-            dependencies: ["XcodeOffloadCore"]
+            name: "MacOSOffloadCLI",
+            dependencies: ["MacOSOffloadCore"]
         ),
         .target(
-            name: "XcodeOffloadCore",
+            name: "MacOSOffloadCore",
             linkerSettings: [
                 .linkedFramework("DiskArbitration")
             ]
         ),
         .testTarget(
-            name: "XcodeOffloadCoreTests",
-            dependencies: ["XcodeOffloadCore"]
+            name: "MacOSOffloadCoreTests",
+            dependencies: ["MacOSOffloadCore"]
         )
     ],
     swiftLanguageModes: [.v6]

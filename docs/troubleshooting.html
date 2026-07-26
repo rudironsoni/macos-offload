@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>xcode-offload troubleshooting</title>
-    <meta name="description" content="Troubleshoot xcode-offload mount and launchd issues.">
+    <title>macos-offload troubleshooting</title>
+    <meta name="description" content="Troubleshoot macos-offload mount and launchd issues.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -47,7 +47,7 @@
         </div>
 
         <h2>Doctor fails</h2>
-        <pre><code>xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --require-shims --strict --json</code></pre>
+        <pre><code>macos-offload doctor --root "$MACOS_OFFLOAD_ROOT" --require-shims --strict --json</code></pre>
         <p>
           Use JSON when you need exact labels and details. Use the normal output for quick terminal checks.
         </p>
@@ -56,8 +56,8 @@
         <p>
           Action commands show concise steps by default. Re-run the same command with <code>--verbose</code> to see both the readable summary and the underlying commands sent to macOS tools.
         </p>
-        <pre><code>xcode-offload mounts repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load --verbose
-xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all --verbose</code></pre>
+        <pre><code>macos-offload mounts repair --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope user --load --verbose
+macos-offload mounts status --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope all --verbose</code></pre>
 
         <h2>External root is missing</h2>
         <p>
@@ -80,9 +80,9 @@ hdiutil info</code></pre>
         <p>
           The device path must stay a normal Apple path, but the backend should be the managed <code>DeviceSet.sparsebundle</code>. A raw physical external APFS volume mounted directly at <code>~/Library/Developer/CoreSimulator/Devices</code> can block CoreSimulator writes even when the mount looks healthy.
         </p>
-        <pre><code>xcode-offload mounts repair --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user
-xcode-offload sim reset \
+        <pre><code>macos-offload mounts repair --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope user --load
+macos-offload mounts status --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope user
+macos-offload sim reset \
   --name Orlix-iPhone-15-Pro-Max \
   --device-type com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro-Max \
   --runtime com.apple.CoreSimulator.SimRuntime.iOS-26-5 \
@@ -96,8 +96,8 @@ xcode-offload sim reset \
         <p>
           Retire both historical root jobs without detaching active runtime children, then restart once.
         </p>
-        <pre><code>sudo xcode-offload mounts uninstall --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope system --unload --on-reboot
-xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --strict</code></pre>
+        <pre><code>sudo macos-offload mounts uninstall --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope system --unload --on-reboot
+macos-offload doctor --root "$MACOS_OFFLOAD_ROOT" --strict</code></pre>
 
         <h2>simctl is slow after a fresh simulator</h2>
         <p>
@@ -106,15 +106,15 @@ xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --strict</code></pre>
 
         <h2>Backups are taking space</h2>
         <p>
-          <code>xcode-offload</code> never deletes backups automatically. Review old backup directories after the current mount state is healthy.
+          <code>macos-offload</code> never deletes backups automatically. Review old backup directories after the current mount state is healthy.
         </p>
-        <pre><code>find "$XCODE_OFFLOAD_ROOT/Xcode/UserBackups/mounts" -maxdepth 2 -type f -name '*.manifest' -print</code></pre>
+        <pre><code>find "$MACOS_OFFLOAD_ROOT/Xcode/UserBackups/mounts" -maxdepth 2 -type f -name '*.manifest' -print</code></pre>
       </section>
     </main>
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>

@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Install xcode-offload</title>
-    <meta name="description" content="Configure xcode-offload with an explicit external storage root.">
+    <title>Install macos-offload</title>
+    <meta name="description" content="Configure macos-offload with an explicit external storage root.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -48,31 +48,31 @@
 
         <h2>Install the CLI</h2>
         <p>
-          Install <code>xcode-offload</code> from the public Homebrew tap. The formula builds from the tagged source release.
+          Install <code>macos-offload</code> from the public Homebrew tap. The formula builds from the tagged source release.
         </p>
-        <pre><code>brew install rudironsoni/tap/xcode-offload
-xcode-offload version</code></pre>
+        <pre><code>brew install rudironsoni/tap/macos-offload
+macos-offload version</code></pre>
         <p>
-          If you prefer to tap first, run <code>brew tap rudironsoni/tap</code>, then <code>brew install xcode-offload</code>.
+          If you prefer to tap first, run <code>brew tap rudironsoni/tap</code>, then <code>brew install macos-offload</code>.
         </p>
 
         <h2>Pick a root</h2>
         <p>
           Choose the external volume yourself. The tool will not pick one for you.
         </p>
-        <pre><code>export XCODE_OFFLOAD_ROOT="/Volumes/YourExternalVolume"</code></pre>
+        <pre><code>export MACOS_OFFLOAD_ROOT="/Volumes/YourExternalVolume"</code></pre>
 
         <h2>Preview user changes</h2>
-        <pre><code>xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+        <pre><code>macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
   --dry-run</code></pre>
 
         <h2>Install user-owned pieces</h2>
-        <pre><code>xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+        <pre><code>macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
@@ -83,8 +83,8 @@ xcode-offload version</code></pre>
 
         <h2>Install the system helper</h2>
         <h2>Run the doctor</h2>
-        <pre><code>xcode-offload doctor \
-  --root "$XCODE_OFFLOAD_ROOT" \
+        <pre><code>macos-offload doctor \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --require-shims \
   --strict</code></pre>
 
@@ -92,8 +92,8 @@ xcode-offload version</code></pre>
         <p>
           For direct mounts at the Apple paths, use the <code>mounts</code> group:
         </p>
-        <pre><code>xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
+        <pre><code>macos-offload mounts install --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope user --load
+macos-offload mounts status --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
 
         <div class="note">
           Keep the external volume mounted before opening Xcode or Simulator. The wrappers fail closed while it is absent, and the user agent reconciles automatically when the configured volume returns.
@@ -103,7 +103,7 @@ xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope 
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>

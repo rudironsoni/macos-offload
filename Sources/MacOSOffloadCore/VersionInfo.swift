@@ -18,7 +18,7 @@ public struct VersionInfo: Codable, Equatable, Sendable {
             return version
         }
 
-        var fields = ["xcode-offload \(version)"]
+        var fields = ["macos-offload \(version)"]
         if !commit.isEmpty {
             fields.append("commit \(commit)")
         }

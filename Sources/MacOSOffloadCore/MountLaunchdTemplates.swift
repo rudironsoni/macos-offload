@@ -23,8 +23,8 @@ public struct MountLaunchdTemplates {
             ],
             runAtLoad: true,
             keepAlive: true,
-            stdout: "\(config.home)/Library/Logs/xcode-offload-mounts-user.log",
-            stderr: "\(config.home)/Library/Logs/xcode-offload-mounts-user.err"
+            stdout: "\(config.home)/Library/Logs/macos-offload-mounts-user.log",
+            stderr: "\(config.home)/Library/Logs/macos-offload-mounts-user.err"
         )
     }
 
@@ -35,8 +35,8 @@ public struct MountLaunchdTemplates {
             programArguments: [config.mountSystemHelperPath],
             runAtLoad: false,
             keepAlive: false,
-            stdout: "/var/log/xcode-offload-mounts-system.log",
-            stderr: "/var/log/xcode-offload-mounts-system.err"
+            stdout: "/var/log/macos-offload-mounts-system.log",
+            stderr: "/var/log/macos-offload-mounts-system.err"
         )
     }
 
@@ -44,7 +44,7 @@ public struct MountLaunchdTemplates {
     public var systemHelper: String {
         """
         #!/bin/zsh
-        echo "xcode-offload system mounts are retired; keep CoreSimulator system paths on the internal volume" >&2
+        echo "macos-offload system mounts are retired; keep CoreSimulator system paths on the internal volume" >&2
         exit 78
         """
     }

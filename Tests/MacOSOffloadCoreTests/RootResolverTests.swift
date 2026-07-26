@@ -1,5 +1,5 @@
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func rootResolverDoesNotGuessAMachineSpecificDefault() {
     #expect(throws: CommandError.self) {
@@ -10,7 +10,7 @@ import Testing
 @Test func rootResolverUsesProductEnvironmentRoot() throws {
     let root = try RootResolver.resolveRoot(
         explicitRoot: nil,
-        environment: ["XCODE_OFFLOAD_ROOT": "/Volumes/ExternalXcode"],
+        environment: ["MACOS_OFFLOAD_ROOT": "/Volumes/ExternalXcode"],
         runner: StubRunner()
     )
 
@@ -20,7 +20,7 @@ import Testing
 @Test func rootResolverPrefersExplicitRootOverEnvironment() throws {
     let root = try RootResolver.resolveRoot(
         explicitRoot: "/Volumes/ExplicitXcode",
-        environment: ["XCODE_OFFLOAD_ROOT": "/Volumes/EnvironmentXcode"],
+        environment: ["MACOS_OFFLOAD_ROOT": "/Volumes/EnvironmentXcode"],
         runner: StubRunner()
     )
 
@@ -30,7 +30,7 @@ import Testing
 @Test func rootResolverUsesConfiguredVolumeName() throws {
     let root = try RootResolver.resolveRoot(
         explicitRoot: nil,
-        environment: ["XCODE_OFFLOAD_VOLUME_NAME": "ExternalXcode"],
+        environment: ["MACOS_OFFLOAD_VOLUME_NAME": "ExternalXcode"],
         runner: StubRunner()
     )
 
@@ -40,7 +40,7 @@ import Testing
 @Test func rootResolverUsesVolumeUUIDMountPoint() throws {
     let root = try RootResolver.resolveRoot(
         explicitRoot: nil,
-        environment: ["XCODE_OFFLOAD_VOLUME_UUID": "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"],
+        environment: ["MACOS_OFFLOAD_VOLUME_UUID": "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"],
         runner: StubRunner(
             result: ProcessResult(
                 exitCode: 0,
@@ -57,8 +57,8 @@ import Testing
     let root = try RootResolver.resolveRoot(
         explicitRoot: nil,
         environment: [
-            "XCODE_OFFLOAD_VOLUME_UUID": "",
-            "XCODE_OFFLOAD_VOLUME_NAME": "NamedXcode"
+            "MACOS_OFFLOAD_VOLUME_UUID": "",
+            "MACOS_OFFLOAD_VOLUME_NAME": "NamedXcode"
         ],
         runner: StubRunner()
     )

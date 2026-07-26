@@ -1,5 +1,5 @@
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func versionDisplayIncludesBuildMetadata() {
     let version = VersionInfo(
@@ -9,7 +9,7 @@ import Testing
         dirty: true
     )
 
-    #expect(version.displayString == "xcode-offload 0.2.0-dev.12+abc1234, commit abc1234, built 2026-07-02T12:00:00Z, dirty")
+    #expect(version.displayString == "macos-offload 0.2.0-dev.12+abc1234, commit abc1234, built 2026-07-02T12:00:00Z, dirty")
 }
 
 @Test func minimalVersionDisplayReturnsVersionOnly() {

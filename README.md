@@ -1,22 +1,22 @@
-# xcode-offload
+# macos-offload
 
-`xcode-offload` moves user-owned Xcode and CoreSimulator storage to an external volume without changing the paths Apple tools expect. CoreSimulator system paths stay on the internal volume so simulator startup does not depend on a root daemon accessing removable storage.
+`macos-offload` moves user-owned Xcode and CoreSimulator storage to an external volume without changing the paths Apple tools expect. CoreSimulator system paths stay on the internal volume so simulator startup does not depend on a root daemon accessing removable storage.
 
 The tool mounts APFS sparsebundles at normal Apple paths. It does not use symlinks for managed paths.
 
-Docs: https://rudironsoni.github.io/xcode-offload/
+Docs: https://rudironsoni.github.io/macos-offload/
 
 ## Install
 
 ```sh
-brew install rudironsoni/tap/xcode-offload
+brew install rudironsoni/tap/macos-offload
 ```
 
 The formula builds from the tagged source release. If you prefer to tap first:
 
 ```sh
 brew tap rudironsoni/tap
-brew install xcode-offload
+brew install macos-offload
 ```
 
 ## What It Manages
@@ -30,24 +30,24 @@ brew install xcode-offload
 The storage root is your choice:
 
 ```sh
-export XCODE_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
+export MACOS_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
 ```
 
-`xcode-offload` never guesses a machine-specific volume.
+`macos-offload` never guesses a machine-specific volume.
 
 ## Quick Start
 
-Install `xcode-offload`, then set the external storage root:
+Install `macos-offload`, then set the external storage root:
 
 ```sh
-export XCODE_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
+export MACOS_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
 ```
 
 Preview the user-level plan:
 
 ```sh
-xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
@@ -57,8 +57,8 @@ xcode-offload repair \
 Install the user LaunchAgent and shims:
 
 ```sh
-xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
@@ -68,8 +68,8 @@ xcode-offload repair \
 Check the result:
 
 ```sh
-xcode-offload doctor \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload doctor \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --require-shims \
   --strict
 ```
@@ -79,14 +79,14 @@ xcode-offload doctor \
 Use `mounts` when you want Apple tools to see their normal paths backed by APFS sparsebundles:
 
 ```sh
-xcode-offload mounts install \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload mounts install \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --load
 
-xcode-offload mounts status \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload mounts status \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope all
 ```
@@ -96,7 +96,7 @@ Default command output is concise. It shows the human-readable steps and status 
 `mounts install` rejects symlinked Apple paths. It also refuses to detach a mount that belongs to another backend. If a managed directory already contains data, the tool moves that data under:
 
 ```text
-$XCODE_OFFLOAD_ROOT/Xcode/UserBackups/mounts/<timestamp>/
+$MACOS_OFFLOAD_ROOT/Xcode/UserBackups/mounts/<timestamp>/
 ```
 
 It never deletes backups for you.
@@ -106,8 +106,8 @@ It never deletes backups for you.
 `mounts verify` runs the mount flow in a disposable scratch root:
 
 ```sh
-xcode-offload mounts verify \
-  --scratch-root "/Volumes/YourExternalVolume/xcode-offload-verify" \
+macos-offload mounts verify \
+  --scratch-root "/Volumes/YourExternalVolume/macos-offload-verify" \
   --mode user
 ```
 
@@ -118,8 +118,8 @@ xcode-offload mounts verify \
 Older releases installed root LaunchDaemons for CoreSimulator system paths. Retire both historical jobs without detaching an active runtime parent:
 
 ```sh
-sudo xcode-offload mounts uninstall \
-  --root "$XCODE_OFFLOAD_ROOT" \
+sudo macos-offload mounts uninstall \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope system \
   --unload \
@@ -141,13 +141,13 @@ That path should be backed by the managed `DeviceSet.sparsebundle`, not by a sym
 Use the tool to repair the mount and recreate the simulator inside the managed device store:
 
 ```sh
-xcode-offload mounts repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload mounts repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --load
 
-xcode-offload sim reset \
+macos-offload sim reset \
   --name Orlix-iPhone-15-Pro-Max \
   --device-type com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro-Max \
   --runtime com.apple.CoreSimulator.SimRuntime.iOS-26-5 \
@@ -160,15 +160,15 @@ xcode-offload sim reset \
 ## Command Groups
 
 ```text
-xcode-offload doctor
-xcode-offload repair
-xcode-offload init
-xcode-offload mount devices
-xcode-offload unmount devices
-xcode-offload install-shims
-xcode-offload mounts install|repair|status|verify|uninstall
-xcode-offload xcodes install-profile|doctor|env
-xcode-offload sim runtimes|devices|recreate|reset|verify|open
+macos-offload doctor
+macos-offload repair
+macos-offload init
+macos-offload mount devices
+macos-offload unmount devices
+macos-offload install-shims
+macos-offload mounts install|repair|status|verify|uninstall
+macos-offload xcodes install-profile|doctor|env
+macos-offload sim runtimes|devices|recreate|reset|verify|open
 ```
 
 The docs site has the command reference, runbooks, and troubleshooting notes.

@@ -592,7 +592,7 @@ public struct MountActions {
     }
 
     private func prepareImagesSparsebundle(_ managedMount: ManagedMount, dryRun: Bool) throws -> [String] {
-        let tempMount = "\(NSTemporaryDirectory())xcode-offload-images-\(UUID().uuidString)"
+        let tempMount = "\(NSTemporaryDirectory())macos-offload-images-\(UUID().uuidString)"
         let attach = ["/usr/bin/hdiutil", "attach", managedMount.imagePath, "-mountpoint", tempMount, "-nobrowse", "-owners", "on"]
         let detach = ["/usr/bin/hdiutil", "detach", tempMount]
         let actions = [
@@ -830,7 +830,7 @@ public struct MountActions {
 
     private func validatePlist(_ plist: String, name: String) throws {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("xcode-offload-\(UUID().uuidString).plist")
+            .appendingPathComponent("macos-offload-\(UUID().uuidString).plist")
         try plist.write(to: url, atomically: true, encoding: .utf8)
         defer {
             try? fileManager.removeItem(at: url)

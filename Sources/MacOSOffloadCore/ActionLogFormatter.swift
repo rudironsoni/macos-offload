@@ -29,7 +29,7 @@ public enum ActionLogFormatter {
         if action.hasPrefix("/usr/bin/hdiutil detach /dev/disk") {
             return "Detach stale sparsebundle attachment"
         }
-        if action.hasPrefix("/usr/bin/hdiutil detach "), action.contains("xcode-offload-images-") {
+        if action.hasPrefix("/usr/bin/hdiutil detach "), action.contains("macos-offload-images-") {
             return nil
         }
         if action.hasPrefix("/usr/bin/hdiutil detach ") {
@@ -72,7 +72,7 @@ public enum ActionLogFormatter {
 
     private static func attachMessage(for action: String) -> String {
         let mountPoint = value(after: " -mountpoint ", in: action)
-        if action.contains("xcode-offload-images-") && action.contains("Images.sparsebundle") {
+        if action.contains("macos-offload-images-") && action.contains("Images.sparsebundle") {
             return "Prepare CoreSimulator Images sparsebundle"
         }
         if let mountPoint {

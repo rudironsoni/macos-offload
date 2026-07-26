@@ -48,10 +48,10 @@ jobs:
 
       - name: Verify mounts
         env:
-          XCODE_OFFLOAD_VERIFY_KEEP_ARTIFACTS: ${{ inputs.keep_artifacts }}
+          MACOS_OFFLOAD_VERIFY_KEEP_ARTIFACTS: ${{ inputs.keep_artifacts }}
         run: |
           args=(
-            ".build/debug/xcode-offload"
+            ".build/debug/macos-offload"
             "mounts"
             "verify"
             "--scratch-root"

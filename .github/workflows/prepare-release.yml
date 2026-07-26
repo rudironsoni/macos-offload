@@ -55,8 +55,8 @@ jobs:
       - name: Build release artifact
         id: build
         env:
-          XCODE_OFFLOAD_RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
-          XCODE_OFFLOAD_KEEP_GENERATED_VERSION: "1"
+          MACOS_OFFLOAD_RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
+          MACOS_OFFLOAD_KEEP_GENERATED_VERSION: "1"
         run: |
           archive="$(make --no-print-directory build-release)"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
@@ -85,7 +85,7 @@ jobs:
         uses: Homebrew/actions/bump-packages@main
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          formulae: rudironsoni/tap/xcode-offload
+          formulae: rudironsoni/tap/macos-offload
           fork: false
 
       - name: Skip Homebrew tap bump

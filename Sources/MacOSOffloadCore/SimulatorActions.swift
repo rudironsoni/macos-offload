@@ -133,7 +133,7 @@ public struct SimulatorActions {
         }
         actions.append("xcrun simctl spawn \(udid.shellQuoted) /bin/echo responsive")
 
-        let screenshot = screenshotPath ?? "\(NSTemporaryDirectory())xcode-offload-\(udid)-screenshot.png"
+        let screenshot = screenshotPath ?? "\(NSTemporaryDirectory())macos-offload-\(udid)-screenshot.png"
         let screenshotResult = try runner.run(
             "/usr/bin/xcrun",
             arguments: ["simctl", "io", udid, "screenshot", screenshot],

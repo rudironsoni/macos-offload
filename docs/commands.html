@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>xcode-offload command reference</title>
-    <meta name="description" content="Command reference for installed xcode-offload users.">
+    <title>macos-offload command reference</title>
+    <meta name="description" content="Command reference for installed macos-offload users.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -55,65 +55,65 @@
         </p>
 
         <h2>Health checks</h2>
-        <pre><code>xcode-offload doctor [--root PATH] [--require-shims] [--skip-simctl] [--strict] [--json]</code></pre>
+        <pre><code>macos-offload doctor [--root PATH] [--require-shims] [--skip-simctl] [--strict] [--json]</code></pre>
         <p>
           <code>doctor</code> checks directories, sparsebundles, mounts, launchd jobs, and optional shims. <code>--strict</code> also checks APFS state, backend provenance, plist validity, and launchd exit status.
         </p>
 
         <h2>Repair</h2>
-        <pre><code>xcode-offload repair [--root PATH] [--home PATH] [--shim-dir PATH] [--scope user|system|all] [--install-shims] [--load] [--dry-run] [--verbose]</code></pre>
+        <pre><code>macos-offload repair [--root PATH] [--home PATH] [--shim-dir PATH] [--scope user|system|all] [--install-shims] [--load] [--dry-run] [--verbose]</code></pre>
         <p>
           <code>repair</code> creates the storage root if needed, mounts the device and cache stores, installs launchd jobs, and can install shims.
         </p>
 
         <h2>Initialize storage</h2>
-        <pre><code>xcode-offload init [--root PATH] [--dry-run] [--no-create-images] [--verbose]</code></pre>
+        <pre><code>macos-offload init [--root PATH] [--dry-run] [--no-create-images] [--verbose]</code></pre>
         <p>
           <code>init</code> creates the directory layout and sparsebundles. Use <code>--no-create-images</code> when you only want the directory layout.
         </p>
 
         <h2>Mount the device store</h2>
-        <pre><code>xcode-offload mount devices [--root PATH] [--dry-run] [--verbose]
-xcode-offload unmount devices [--root PATH] [--dry-run] [--verbose]</code></pre>
+        <pre><code>macos-offload mount devices [--root PATH] [--dry-run] [--verbose]
+macos-offload unmount devices [--root PATH] [--dry-run] [--verbose]</code></pre>
         <p>
           These compatibility commands manage the user-owned device sparsebundle. System cache mounts are retired.
         </p>
 
         <h2>Install shims</h2>
-        <pre><code>xcode-offload install-shims [--root PATH] [--shim-dir PATH] [--dry-run] [--verbose]</code></pre>
+        <pre><code>macos-offload install-shims [--root PATH] [--shim-dir PATH] [--dry-run] [--verbose]</code></pre>
         <p>
           Shims wrap <code>xcrun</code>, <code>simctl</code>, and <code>xcodebuild</code> for explicit flag routing. They are optional when APFS mount mode is active.
         </p>
 
         <h2>Launchd</h2>
-        <pre><code>xcode-offload install-launchd [--root PATH] [--home PATH] [--scope user|all] [--load] [--dry-run] [--verbose]
-xcode-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]</code></pre>
+        <pre><code>macos-offload install-launchd [--root PATH] [--home PATH] [--scope user|all] [--load] [--dry-run] [--verbose]
+macos-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]</code></pre>
         <p>
           The supported job is the persistent user mount agent. Historical root jobs can only be removed with the system scope and <code>--on-reboot</code>.
         </p>
 
         <h2>APFS mount manager</h2>
-        <pre><code>xcode-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-xcode-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-xcode-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
-xcode-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
-xcode-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]</code></pre>
+        <pre><code>macos-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+macos-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+macos-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
+macos-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
+macos-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]</code></pre>
 
         <h2>xcodes compatibility</h2>
-        <pre><code>xcode-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
-xcode-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
-xcode-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]</code></pre>
+        <pre><code>macos-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
+macos-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
+macos-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]</code></pre>
         <p>
           <code>xcodes install-profile</code> prepares APFS-backed Apple paths for xcodes and standard Xcode tools. It does not require command shims.
         </p>
 
         <h2>Simulator helpers</h2>
-        <pre><code>xcode-offload sim runtimes
-xcode-offload sim devices [--all]
-xcode-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
-xcode-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
-xcode-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
-xcode-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]</code></pre>
+        <pre><code>macos-offload sim runtimes
+macos-offload sim devices [--all]
+macos-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
+macos-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
+macos-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
+macos-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]</code></pre>
         <p>
           <code>sim recreate</code> deletes an existing simulator with the same name, creates a fresh one, and can boot it. First boot can be slow on recent iOS runtimes, so the boot timeout is intentionally long.
           <code>sim reset --verify</code> recreates a named simulator, boots it, waits for bootstatus, runs a command inside it, and writes a screenshot.
@@ -125,7 +125,7 @@ xcode-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]</cod
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>

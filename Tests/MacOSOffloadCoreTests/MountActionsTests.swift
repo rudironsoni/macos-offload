@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func managedMountInventoryUsesOnlyUserOwnedApplePathsAndExternalSparsebundles() {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
@@ -18,7 +18,7 @@ import Testing
     let config = StorageConfig(root: root, home: home)
     let actions = try MountActions(runner: MountStubRunner(results: [:])).install(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
+        toolPath: "/opt/homebrew/bin/macos-offload",
         scope: .user,
         load: true,
         dryRun: true
@@ -47,7 +47,7 @@ import Testing
     #expect(throws: CommandError.self) {
         _ = try MountActions(runner: MountStubRunner(results: [:])).install(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .user,
             load: false,
             dryRun: true
@@ -164,7 +164,7 @@ import Testing
 
 @Test func mountLaunchdPlistPassesPlutilLintAndRunsPersistentAgent() throws {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
-    let templates = MountLaunchdTemplates(config: config, toolPath: "/opt/homebrew/bin/xcode-offload")
+    let templates = MountLaunchdTemplates(config: config, toolPath: "/opt/homebrew/bin/macos-offload")
 
     try assertPlistLintPasses(templates.userAgentPlist)
     #expect(templates.userAgentPlist.contains("<string>mounts</string>"))
@@ -186,7 +186,7 @@ import Testing
 
     let actions = try MountActions(runner: MountStubRunner(results: [:])).install(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
+        toolPath: "/opt/homebrew/bin/macos-offload",
         scope: .user,
         load: false,
         dryRun: true
@@ -219,7 +219,7 @@ import Testing
     #expect(throws: CommandError.self) {
         _ = try MountActions(runner: runner).install(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .user,
             load: false,
             dryRun: true
@@ -245,7 +245,7 @@ import Testing
     do {
         _ = try MountActions(runner: runner).install(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .system,
             load: false,
             dryRun: true
@@ -276,7 +276,7 @@ import Testing
 
     let actions = try MountActions(runner: runner).repair(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
+        toolPath: "/opt/homebrew/bin/macos-offload",
         scope: .user,
         load: false,
         dryRun: true
@@ -364,14 +364,14 @@ private func mountHdiutilOutput(config: StorageConfig, only ids: Set<String>? = 
 
 private func temporaryDirectory() throws -> String {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-mounts-test-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("macos-offload-mounts-test-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url.path
 }
 
 private func assertPlistLintPasses(_ plist: String) throws {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-mounts-test-\(UUID().uuidString).plist")
+        .appendingPathComponent("macos-offload-mounts-test-\(UUID().uuidString).plist")
     try plist.write(to: url, atomically: true, encoding: .utf8)
     defer {
         try? FileManager.default.removeItem(at: url)
@@ -388,7 +388,7 @@ private func assertPlistLintPasses(_ plist: String) throws {
 
 private func assertZshSyntaxPasses(_ script: String) throws {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-mounts-test-\(UUID().uuidString).zsh")
+        .appendingPathComponent("macos-offload-mounts-test-\(UUID().uuidString).zsh")
     try script.write(to: url, atomically: true, encoding: .utf8)
     defer {
         try? FileManager.default.removeItem(at: url)

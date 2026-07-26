@@ -48,16 +48,16 @@ public struct StorageConfig: Codable, Equatable, Sendable {
         self.tmp = "\(xcodeRoot)/tmp"
         self.shimDirectory = shimDirectory ?? "\(normalizedHome)/.local/bin"
         self.apfsDeviceVolumeName = apfsDeviceVolumeName
-        self.launchAgentLabel = "io.github.rudironsoni.xcode-offload.device-store"
-        self.launchDaemonLabel = "io.github.rudironsoni.xcode-offload.caches"
-        self.cacheHelperPath = "/Library/PrivilegedHelperTools/io.github.rudironsoni.xcode-offload.mount-coresimulator-caches"
-        self.userLaunchAgentPath = "\(normalizedHome)/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.device-store.plist"
-        self.systemLaunchDaemonPath = "/Library/LaunchDaemons/io.github.rudironsoni.xcode-offload.caches.plist"
-        self.mountUserLaunchAgentLabel = "io.github.rudironsoni.xcode-offload.mounts-user"
-        self.mountSystemLaunchDaemonLabel = "io.github.rudironsoni.xcode-offload.mounts-system"
-        self.mountSystemHelperPath = "/Library/PrivilegedHelperTools/io.github.rudironsoni.xcode-offload.mounts-system"
-        self.mountUserLaunchAgentPath = "\(normalizedHome)/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.mounts-user.plist"
-        self.mountSystemLaunchDaemonPath = "/Library/LaunchDaemons/io.github.rudironsoni.xcode-offload.mounts-system.plist"
+        self.launchAgentLabel = "io.github.rudironsoni.macos-offload.device-store"
+        self.launchDaemonLabel = "io.github.rudironsoni.macos-offload.caches"
+        self.cacheHelperPath = "/Library/PrivilegedHelperTools/io.github.rudironsoni.macos-offload.mount-coresimulator-caches"
+        self.userLaunchAgentPath = "\(normalizedHome)/Library/LaunchAgents/io.github.rudironsoni.macos-offload.device-store.plist"
+        self.systemLaunchDaemonPath = "/Library/LaunchDaemons/io.github.rudironsoni.macos-offload.caches.plist"
+        self.mountUserLaunchAgentLabel = "io.github.rudironsoni.macos-offload.mounts-user"
+        self.mountSystemLaunchDaemonLabel = "io.github.rudironsoni.macos-offload.mounts-system"
+        self.mountSystemHelperPath = "/Library/PrivilegedHelperTools/io.github.rudironsoni.macos-offload.mounts-system"
+        self.mountUserLaunchAgentPath = "\(normalizedHome)/Library/LaunchAgents/io.github.rudironsoni.macos-offload.mounts-user.plist"
+        self.mountSystemLaunchDaemonPath = "/Library/LaunchDaemons/io.github.rudironsoni.macos-offload.mounts-system.plist"
     }
 
     public var xcrunShim: String {
@@ -143,7 +143,7 @@ public struct StorageConfig: Codable, Equatable, Sendable {
     }
 
     public var applicationSupportDirectory: String {
-        "\(home)/Library/Application Support/xcode-offload"
+        "\(home)/Library/Application Support/macos-offload"
     }
 
     public var mountConfigurationPath: String {
@@ -173,12 +173,12 @@ public enum RootResolver {
             return explicitRoot
         }
 
-        if let root = environment["XCODE_OFFLOAD_ROOT"], !root.isEmpty {
+        if let root = environment["MACOS_OFFLOAD_ROOT"], !root.isEmpty {
             return root
         }
 
-        let volumeUUID = environment["XCODE_OFFLOAD_VOLUME_UUID"]
-        let volumeName = environment["XCODE_OFFLOAD_VOLUME_NAME"]
+        let volumeUUID = environment["MACOS_OFFLOAD_VOLUME_UUID"]
+        let volumeName = environment["MACOS_OFFLOAD_VOLUME_NAME"]
 
         if let volumeUUID,
            !volumeUUID.isEmpty,
@@ -193,6 +193,6 @@ public enum RootResolver {
             return "/Volumes/\(volumeName)"
         }
 
-        throw CommandError("missing storage root. Pass --root PATH or set XCODE_OFFLOAD_ROOT.", exitCode: 78)
+        throw CommandError("missing storage root. Pass --root PATH or set MACOS_OFFLOAD_ROOT.", exitCode: 78)
     }
 }

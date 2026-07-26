@@ -5,7 +5,7 @@ import Testing
     let output = try temporaryOutputPath()
     defer { try? FileManager.default.removeItem(atPath: output) }
 
-    let version = try runVersionScript(output: output, environment: ["XCODE_OFFLOAD_RELEASE_TAG": "v1.2.3-beta.1+build.7"])
+    let version = try runVersionScript(output: output, environment: ["MACOS_OFFLOAD_RELEASE_TAG": "v1.2.3-beta.1+build.7"])
 
     #expect(version == "1.2.3-beta.1+build.7")
     #expect(try String(contentsOfFile: output, encoding: .utf8).contains("public static let version = \"1.2.3-beta.1+build.7\""))
@@ -34,7 +34,7 @@ import Testing
 
     let version = try runVersionScript(
         output: output,
-        environment: ["XCODE_OFFLOAD_RELEASE_TAG": "v3.2.1"],
+        environment: ["MACOS_OFFLOAD_RELEASE_TAG": "v3.2.1"],
         currentDirectory: sourceDirectory.path
     )
     let generated = try String(contentsOfFile: output, encoding: .utf8)
@@ -97,7 +97,7 @@ private func temporaryOutputPath() throws -> String {
 
 private func temporaryDirectory() throws -> URL {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-version-test-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("macos-offload-version-test-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     return directory
 }

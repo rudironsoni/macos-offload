@@ -56,7 +56,7 @@ public struct MountVerification {
     public func run(options: MountVerificationOptions, event: (String) -> Void) throws {
         let scratchRoot = try validatedScratchRoot(options.scratchRoot)
         let runID = timestampWithPID()
-        let root = "\(scratchRoot)/xcode-offload-verify-\(runID)"
+        let root = "\(scratchRoot)/macos-offload-verify-\(runID)"
         var cleanupCommands: [[String]] = []
         var primaryError: Error?
 
@@ -83,7 +83,7 @@ public struct MountVerification {
 
             case .e2e:
                 guard options.allowSimDelete else {
-                    throw CommandError("e2e verification requires --allow-sim-delete or XCODE_OFFLOAD_VERIFY_ALLOW_SIM_DELETE=1", exitCode: 77)
+                    throw CommandError("e2e verification requires --allow-sim-delete or MACOS_OFFLOAD_VERIFY_ALLOW_SIM_DELETE=1", exitCode: 77)
                 }
                 cleanupCommands.append(["mounts", "uninstall", "--root", root, "--home", options.home, "--scope", "user", "--unload"])
                 try runTool(["mounts", "install", "--root", root, "--home", options.home, "--scope", "user", "--load"], toolPath: options.toolPath, event: event)
@@ -92,7 +92,7 @@ public struct MountVerification {
                 try runCommand("/usr/bin/xcodebuild", ["-version"], environment: defaultAppleToolEnvironment, event: event)
                 if let runtime = options.runtime, !runtime.isEmpty,
                    let deviceType = options.deviceType, !deviceType.isEmpty {
-                    let name = "xcode-offload-verify-\(runID)"
+                    let name = "macos-offload-verify-\(runID)"
                     try runTool([
                         "sim", "recreate",
                         "--name", name,

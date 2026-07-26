@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func supportedMountInventoryContainsOnlyUserOwnedPaths() {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
@@ -18,7 +18,7 @@ import Testing
     do {
         _ = try MountActions(runner: ReliabilityStubRunner()).install(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .system,
             load: false,
             dryRun: true
@@ -34,7 +34,7 @@ import Testing
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
     let plist = MountLaunchdTemplates(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload"
+        toolPath: "/opt/homebrew/bin/macos-offload"
     ).userAgentPlist
 
     #expect(plist.contains("<string>agent</string>"))
@@ -50,7 +50,7 @@ import Testing
         environment: [:]
     ).installProfile(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
+        toolPath: "/opt/homebrew/bin/macos-offload",
         load: false,
         dryRun: true
     )
@@ -257,7 +257,7 @@ private final class ReliabilityCallRecorder: @unchecked Sendable {
 }
 
 private func reliabilityTemporaryDirectory() throws -> String {
-    let path = "\(NSTemporaryDirectory())xcode-offload-reliability-\(UUID().uuidString)"
+    let path = "\(NSTemporaryDirectory())macos-offload-reliability-\(UUID().uuidString)"
     try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
     return path
 }

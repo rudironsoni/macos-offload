@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>xcode-offload releases</title>
-    <meta name="description" content="Release policy for xcode-offload users.">
+    <title>macos-offload releases</title>
+    <meta name="description" content="Release policy for macos-offload users.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -50,7 +50,7 @@
         <p>
           Release tags use <code>vMAJOR.MINOR.PATCH</code>, for example <code>v0.1.0</code>. Check the installed version with:
         </p>
-        <pre><code>xcode-offload version</code></pre>
+        <pre><code>macos-offload version</code></pre>
 
         <h2>Release notes</h2>
         <p>
@@ -66,19 +66,19 @@
         <p>
           The public tap formula builds from the tagged source release.
         </p>
-        <pre><code>brew install rudironsoni/tap/xcode-offload</code></pre>
+        <pre><code>brew install rudironsoni/tap/macos-offload</code></pre>
 
         <h2>Before upgrading</h2>
         <p>
           Run the doctor before and after an upgrade. That gives you a before-and-after view of mount state, launchd jobs, and shim health.
         </p>
-        <pre><code>xcode-offload doctor --root "$XCODE_OFFLOAD_ROOT" --require-shims --strict</code></pre>
+        <pre><code>macos-offload doctor --root "$MACOS_OFFLOAD_ROOT" --require-shims --strict</code></pre>
       </section>
     </main>
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>

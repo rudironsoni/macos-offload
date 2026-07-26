@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>xcode-offload documentation</title>
+    <title>macos-offload documentation</title>
     <meta name="description" content="Move Xcode and CoreSimulator storage to external APFS sparsebundles without symlinking Apple paths.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
@@ -11,7 +11,7 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -42,7 +42,7 @@
           <p class="eyebrow">macOS developer storage</p>
           <h1>Move Xcode storage off the internal disk.</h1>
           <p class="lead">
-            <code>xcode-offload</code> mounts external APFS sparsebundles at the paths Xcode and CoreSimulator already use.
+            <code>macos-offload</code> mounts external APFS sparsebundles at the paths Xcode and CoreSimulator already use.
           </p>
           <div class="actions">
             <a class="button" href="install.html">Start setup</a>
@@ -75,24 +75,24 @@
         </div>
 
         <h2>Basic setup</h2>
-        <pre><code>export XCODE_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
+        <pre><code>export MACOS_OFFLOAD_ROOT="/Volumes/YourExternalVolume"
 
-xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
   --dry-run
 
-xcode-offload repair \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload repair \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --home "$HOME" \
   --scope user \
   --install-shims \
   --load
 
-xcode-offload doctor \
-  --root "$XCODE_OFFLOAD_ROOT" \
+macos-offload doctor \
+  --root "$MACOS_OFFLOAD_ROOT" \
   --require-shims \
   --strict</code></pre>
 
@@ -100,8 +100,8 @@ xcode-offload doctor \
         <p>
           Use <code>mounts</code> when you want the default Apple paths backed directly by APFS sparsebundles:
         </p>
-        <pre><code>xcode-offload mounts install --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope user --load
-xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
+        <pre><code>macos-offload mounts install --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope user --load
+macos-offload mounts status --root "$MACOS_OFFLOAD_ROOT" --home "$HOME" --scope all</code></pre>
 
         <div class="warning">
           <strong>CoreSimulator system paths stay internal.</strong>
@@ -112,7 +112,7 @@ xcode-offload mounts status --root "$XCODE_OFFLOAD_ROOT" --home "$HOME" --scope 
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>

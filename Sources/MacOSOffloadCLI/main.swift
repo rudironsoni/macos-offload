@@ -1,5 +1,5 @@
 import Foundation
-import XcodeOffloadCore
+import MacOSOffloadCore
 
 @main
 enum Main {
@@ -61,7 +61,7 @@ struct CLI {
         case "wrap-xcodebuild":
             try wrapper(arguments: arguments.remaining, kind: .xcodebuild)
         default:
-            throw CommandError("unknown command: \(command)\n\nRun xcode-offload help.", exitCode: 64)
+            throw CommandError("unknown command: \(command)\n\nRun macos-offload help.", exitCode: 64)
         }
     }
 
@@ -325,9 +325,9 @@ struct CLI {
                 report.checks.forEach { print("  \($0.humanLine)") }
             }
             if report.passed {
-                print("OK xcode-offload mounts status passed")
+                print("OK macos-offload mounts status passed")
             } else {
-                FileHandle.standardError.write(Data("FAIL xcode-offload mounts status found \(report.failureCount) issue(s)\n".utf8))
+                FileHandle.standardError.write(Data("FAIL macos-offload mounts status found \(report.failureCount) issue(s)\n".utf8))
             }
         }
 
@@ -350,21 +350,21 @@ struct CLI {
 
         let environment = ProcessInfo.processInfo.environment
         let scratchRoot = arguments.popOption("--scratch-root")
-            ?? environment["XCODE_OFFLOAD_VERIFY_ROOT"]
+            ?? environment["MACOS_OFFLOAD_VERIFY_ROOT"]
         guard let scratchRoot, !scratchRoot.isEmpty else {
-            throw CommandError("missing scratch root. Pass --scratch-root PATH or set XCODE_OFFLOAD_VERIFY_ROOT.", exitCode: 64)
+            throw CommandError("missing scratch root. Pass --scratch-root PATH or set MACOS_OFFLOAD_VERIFY_ROOT.", exitCode: 64)
         }
 
         let toolPath = arguments.popOption("--tool-path") ?? defaultToolPath()
-        let home = arguments.popOption("--home") ?? environment["XCODE_OFFLOAD_VERIFY_HOME"] ?? verificationHome(environment: environment)
-        let runtime = arguments.popOption("--runtime") ?? environment["XCODE_OFFLOAD_VERIFY_RUNTIME"]
-        let deviceType = arguments.popOption("--device-type") ?? environment["XCODE_OFFLOAD_VERIFY_DEVICE_TYPE"]
+        let home = arguments.popOption("--home") ?? environment["MACOS_OFFLOAD_VERIFY_HOME"] ?? verificationHome(environment: environment)
+        let runtime = arguments.popOption("--runtime") ?? environment["MACOS_OFFLOAD_VERIFY_RUNTIME"]
+        let deviceType = arguments.popOption("--device-type") ?? environment["MACOS_OFFLOAD_VERIFY_DEVICE_TYPE"]
         let keepArtifacts = arguments.popFlag("--keep-artifacts")
-            || environmentFlag(environment["XCODE_OFFLOAD_VERIFY_KEEP_ARTIFACTS"])
+            || environmentFlag(environment["MACOS_OFFLOAD_VERIFY_KEEP_ARTIFACTS"])
         let allowSystem = arguments.popFlag("--allow-system")
-            || environmentFlag(environment["XCODE_OFFLOAD_VERIFY_ALLOW_SYSTEM"])
+            || environmentFlag(environment["MACOS_OFFLOAD_VERIFY_ALLOW_SYSTEM"])
         let allowSimDelete = arguments.popFlag("--allow-sim-delete")
-            || environmentFlag(environment["XCODE_OFFLOAD_VERIFY_ALLOW_SIM_DELETE"])
+            || environmentFlag(environment["MACOS_OFFLOAD_VERIFY_ALLOW_SIM_DELETE"])
         let bootTimeout = Int(arguments.popOption("--boot-timeout") ?? "1800") ?? 1800
         try arguments.rejectUnknown()
 
@@ -443,9 +443,9 @@ struct CLI {
             }
 
             if report.passed {
-                print("OK xcode-offload xcodes doctor passed")
+                print("OK macos-offload xcodes doctor passed")
             } else {
-                FileHandle.standardError.write(Data("FAIL xcode-offload xcodes doctor found \(report.failureCount) issue(s)\n".utf8))
+                FileHandle.standardError.write(Data("FAIL macos-offload xcodes doctor found \(report.failureCount) issue(s)\n".utf8))
             }
         }
 
@@ -673,33 +673,33 @@ struct CLI {
     private func printHelp() {
         print(
             """
-            xcode-offload manages external Xcode and CoreSimulator storage.
+            macos-offload manages external Xcode and CoreSimulator storage.
 
             Usage:
-              xcode-offload doctor [--root PATH] [--require-shims] [--skip-simctl] [--strict] [--json]
-              xcode-offload repair [--root PATH] [--home PATH] [--shim-dir PATH] [--scope user|system|all] [--install-shims] [--load] [--dry-run] [--verbose]
-              xcode-offload init [--root PATH] [--dry-run] [--no-create-images] [--verbose]
-              xcode-offload mount devices [--root PATH] [--dry-run] [--verbose]
-              xcode-offload unmount devices [--root PATH] [--dry-run] [--verbose]
-              xcode-offload install-shims [--root PATH] [--shim-dir PATH] [--dry-run] [--verbose]
-              xcode-offload daemon install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
-              xcode-offload launchd install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
-              xcode-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-              xcode-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-              xcode-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
-              xcode-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
-              xcode-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]
-              xcode-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
-              xcode-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
-              xcode-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]
-              xcode-offload install-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-              xcode-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--dry-run] [--verbose]
-              xcode-offload sim runtimes
-              xcode-offload sim devices [--all]
-              xcode-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
-              xcode-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
-              xcode-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
-              xcode-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]
+              macos-offload doctor [--root PATH] [--require-shims] [--skip-simctl] [--strict] [--json]
+              macos-offload repair [--root PATH] [--home PATH] [--shim-dir PATH] [--scope user|system|all] [--install-shims] [--load] [--dry-run] [--verbose]
+              macos-offload init [--root PATH] [--dry-run] [--no-create-images] [--verbose]
+              macos-offload mount devices [--root PATH] [--dry-run] [--verbose]
+              macos-offload unmount devices [--root PATH] [--dry-run] [--verbose]
+              macos-offload install-shims [--root PATH] [--shim-dir PATH] [--dry-run] [--verbose]
+              macos-offload daemon install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
+              macos-offload launchd install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
+              macos-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+              macos-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+              macos-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
+              macos-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
+              macos-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]
+              macos-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
+              macos-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
+              macos-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]
+              macos-offload install-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+              macos-offload uninstall-launchd [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--dry-run] [--verbose]
+              macos-offload sim runtimes
+              macos-offload sim devices [--all]
+              macos-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
+              macos-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
+              macos-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
+              macos-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]
             """
         )
     }
@@ -710,7 +710,7 @@ struct CLI {
             Root CoreSimulator mount daemons are retired.
 
             Usage:
-              xcode-offload daemon install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
+              macos-offload daemon install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
             """
         )
     }
@@ -721,7 +721,7 @@ struct CLI {
             Root CoreSimulator mount daemons are retired.
 
             Usage:
-              xcode-offload launchd install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
+              macos-offload launchd install [--root PATH] [--home PATH] [--no-load] [--dry-run] [--verbose]
             """
         )
     }
@@ -729,14 +729,14 @@ struct CLI {
     private func printMountsHelp() {
         print(
             """
-            xcode-offload mounts manages APFS sparsebundle mountpoints at Apple paths.
+            macos-offload mounts manages APFS sparsebundle mountpoints at Apple paths.
 
             Usage:
-              xcode-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-              xcode-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
-              xcode-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
-              xcode-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
-              xcode-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]
+              macos-offload mounts install [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+              macos-offload mounts repair [--root PATH] [--home PATH] [--scope user|system|all] [--load] [--dry-run] [--verbose]
+              macos-offload mounts uninstall [--root PATH] [--home PATH] [--scope user|system|all] [--unload] [--on-reboot] [--dry-run] [--verbose]
+              macos-offload mounts status [--root PATH] [--home PATH] [--scope user|system|all] [--json] [--verbose]
+              macos-offload mounts verify --scratch-root PATH [--mode user|system|e2e] [--home PATH] [--runtime ID] [--device-type ID] [--keep-artifacts] [--allow-system] [--allow-sim-delete]
 
             Only user-owned Devices, DerivedData, and Archives paths are mounted.
             CoreSimulator system paths remain on the internal volume.
@@ -747,15 +747,15 @@ struct CLI {
     private func printSimHelp() {
         print(
             """
-            xcode-offload sim manages CoreSimulator devices through standard simctl.
+            macos-offload sim manages CoreSimulator devices through standard simctl.
 
             Usage:
-              xcode-offload sim runtimes
-              xcode-offload sim devices [--all]
-              xcode-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
-              xcode-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
-              xcode-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
-              xcode-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]
+              macos-offload sim runtimes
+              macos-offload sim devices [--all]
+              macos-offload sim recreate --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--boot-timeout SECONDS]
+              macos-offload sim reset --name NAME --device-type TYPE --runtime RUNTIME [--boot] [--verify] [--boot-timeout SECONDS] [--screenshot PATH]
+              macos-offload sim verify (--name NAME | --udid UDID) [--boot-timeout SECONDS] [--screenshot PATH]
+              macos-offload sim open (--name NAME | --udid UDID) [--boot-timeout SECONDS]
             """
         )
     }
@@ -763,12 +763,12 @@ struct CLI {
     private func printXcodesHelp() {
         print(
             """
-            xcode-offload xcodes configures transparent storage for xcodes and Apple tools.
+            macos-offload xcodes configures transparent storage for xcodes and Apple tools.
 
             Usage:
-              xcode-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
-              xcode-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
-              xcode-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]
+              macos-offload xcodes install-profile [--root PATH] [--home PATH] [--load] [--dry-run] [--verbose]
+              macos-offload xcodes doctor [--root PATH] [--home PATH] [--require-xcodes] [--strict] [--json]
+              macos-offload xcodes env install [--root PATH] [--home PATH] [--directory PATH] [--dry-run] [--verbose]
 
             The profile mounts user-owned APFS sparsebundles and sets XCODES_DIRECTORY to the external Xcode root.
             It does not install xcrun, simctl, or xcodebuild shims.

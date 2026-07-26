@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Suite(.serialized)
 struct ProcessRunnerTests {

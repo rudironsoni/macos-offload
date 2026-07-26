@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func mountSkipsAlreadyMountedDeviceStore() throws {
     let config = StorageConfig(root: "/Volumes/ExternalXcode", home: "/Users/rudi")
@@ -45,7 +45,7 @@ import Testing
     #expect(throws: CommandError.self) {
         _ = try actions.installLaunchd(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .system,
             load: false,
             dryRun: false
@@ -59,14 +59,14 @@ import Testing
 
     let plan = try actions.installLaunchd(
         config: config,
-        toolPath: "/opt/homebrew/bin/xcode-offload",
+        toolPath: "/opt/homebrew/bin/macos-offload",
         scope: .user,
         load: true,
         dryRun: true
     )
 
-    #expect(plan.contains("write /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.mounts-user.plist"))
-    #expect(plan.contains("launchctl bootstrap gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.mounts-user.plist"))
+    #expect(plan.contains("write /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.macos-offload.mounts-user.plist"))
+    #expect(plan.contains("launchctl bootstrap gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.macos-offload.mounts-user.plist"))
 }
 
 @Test func uninstallLaunchdDryRunPlansBothScopes() throws {
@@ -80,10 +80,10 @@ import Testing
         dryRun: true
     )
 
-    #expect(plan.contains("launchctl bootout gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.device-store.plist || true"))
-    #expect(plan.contains("rm -f /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.xcode-offload.device-store.plist"))
-    #expect(plan.contains("launchctl bootout system /Library/LaunchDaemons/io.github.rudironsoni.xcode-offload.caches.plist || true"))
-    #expect(plan.contains("rm -f /Library/PrivilegedHelperTools/io.github.rudironsoni.xcode-offload.mount-coresimulator-caches"))
+    #expect(plan.contains("launchctl bootout gui/\(getuid()) /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.macos-offload.device-store.plist || true"))
+    #expect(plan.contains("rm -f /Users/rudi/Library/LaunchAgents/io.github.rudironsoni.macos-offload.device-store.plist"))
+    #expect(plan.contains("launchctl bootout system /Library/LaunchDaemons/io.github.rudironsoni.macos-offload.caches.plist || true"))
+    #expect(plan.contains("rm -f /Library/PrivilegedHelperTools/io.github.rudironsoni.macos-offload.mount-coresimulator-caches"))
 }
 
 @Test func systemLaunchdDryRunIsRetired() throws {
@@ -93,7 +93,7 @@ import Testing
     #expect(throws: CommandError.self) {
         _ = try actions.installLaunchd(
             config: config,
-            toolPath: "/opt/homebrew/bin/xcode-offload",
+            toolPath: "/opt/homebrew/bin/macos-offload",
             scope: .system,
             load: false,
             dryRun: true

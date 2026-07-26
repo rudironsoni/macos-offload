@@ -42,9 +42,9 @@ public struct MountAgent {
 private final class MountAgentContext: @unchecked Sendable {
     private let actions: MountActions
     private let config: StorageConfig
-    private let queue = DispatchQueue(label: "io.github.rudironsoni.xcode-offload.mount-agent")
+    private let queue = DispatchQueue(label: "io.github.rudironsoni.macos-offload.mount-agent")
     private let logger = Logger(
-        subsystem: "io.github.rudironsoni.xcode-offload",
+        subsystem: "io.github.rudironsoni.macos-offload",
         category: "mount-agent"
     )
     private var isReconciling = false

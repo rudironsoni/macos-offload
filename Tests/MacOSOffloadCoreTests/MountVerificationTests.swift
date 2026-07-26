@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func mountVerificationUserModeRunsToolSubcommandsAndCleansArtifacts() throws {
     let scratchRoot = try temporaryVerificationDirectory()
@@ -12,7 +12,7 @@ import Testing
             mode: .user,
             scratchRoot: scratchRoot,
             home: "/Users/rudi",
-            toolPath: "/tmp/xcode-offload"
+            toolPath: "/tmp/macos-offload"
         )
     ) { events.append($0) }
 
@@ -31,7 +31,7 @@ import Testing
                 mode: .user,
                 scratchRoot: "/Volumes",
                 home: "/Users/rudi",
-                toolPath: "/tmp/xcode-offload"
+                toolPath: "/tmp/macos-offload"
             )
         ) { _ in }
     }
@@ -46,7 +46,7 @@ import Testing
                 mode: .system,
                 scratchRoot: scratchRoot,
                 home: "/Users/rudi",
-                toolPath: "/tmp/xcode-offload"
+                toolPath: "/tmp/macos-offload"
             )
         ) { _ in }
     }
@@ -61,7 +61,7 @@ import Testing
                 mode: .e2e,
                 scratchRoot: scratchRoot,
                 home: "/Users/rudi",
-                toolPath: "/tmp/xcode-offload"
+                toolPath: "/tmp/macos-offload"
             )
         ) { _ in }
     }
@@ -97,7 +97,7 @@ private final class VerificationRecordingRunner: CommandRunning, @unchecked Send
 
 private func temporaryVerificationDirectory() throws -> String {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-verify-test-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("macos-offload-verify-test-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url.path
 }

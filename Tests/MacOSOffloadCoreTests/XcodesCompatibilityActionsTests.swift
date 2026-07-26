@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeOffloadCore
+@testable import MacOSOffloadCore
 
 @Test func xcodesInstallProfileDryRunInstallsMountsEnvironmentAndNoShims() throws {
     let root = try temporaryDirectory()
@@ -12,7 +12,7 @@ import Testing
         environment: [:]
     ).installProfile(
         config: config,
-        toolPath: "/usr/local/bin/xcode-offload",
+        toolPath: "/usr/local/bin/macos-offload",
         load: true,
         dryRun: true
     )
@@ -106,7 +106,7 @@ private func createXcodesFixture(config: StorageConfig) throws {
 
 private func temporaryDirectory() throws -> String {
     let url = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("xcode-offload-xcodes-test-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("macos-offload-xcodes-test-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url.path
 }

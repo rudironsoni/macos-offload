@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>xcode-offload concepts</title>
-    <meta name="description" content="How xcode-offload uses APFS sparsebundles, launchd jobs, and optional shims.">
+    <title>macos-offload concepts</title>
+    <meta name="description" content="How macos-offload uses APFS sparsebundles, launchd jobs, and optional shims.">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="index.html">
-          <strong>xcode-offload</strong>
+          <strong>macos-offload</strong>
           <span>APFS storage for Xcode and CoreSimulator</span>
         </a>
         <nav class="top-nav" aria-label="Primary">
@@ -20,7 +20,7 @@
           <a href="commands.html">Commands</a>
           <a href="operations.html">Operations</a>
           <a href="troubleshooting.html">Troubleshooting</a>
-          <a href="https://github.com/rudironsoni/xcode-offload">GitHub</a>
+          <a href="https://github.com/rudironsoni/macos-offload">GitHub</a>
         </nav>
       </div>
     </header>
@@ -48,7 +48,7 @@
 
         <h2>Storage root</h2>
         <p>
-          Every command accepts <code>--root PATH</code>, or reads <code>XCODE_OFFLOAD_ROOT</code>. Point it at a mounted external volume or another writable location you chose.
+          Every command accepts <code>--root PATH</code>, or reads <code>MACOS_OFFLOAD_ROOT</code>. Point it at a mounted external volume or another writable location you chose.
         </p>
         <pre><code>/Volumes/YourExternalVolume/Xcode/
   CoreSimulator/
@@ -78,7 +78,7 @@
 
         <h2>Why not symlinks</h2>
         <p>
-          CoreSimulator and <code>simdiskimaged</code> can reject symlinked mount parents. <code>xcode-offload</code> treats a symlinked managed path as invalid. Replace it with a real directory before mounting.
+          CoreSimulator and <code>simdiskimaged</code> can reject symlinked mount parents. <code>macos-offload</code> treats a symlinked managed path as invalid. Replace it with a real directory before mounting.
         </p>
 
         <h2>Launchd responsibilities</h2>
@@ -100,7 +100,7 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        Docs for <code>xcode-offload</code>. Source: github.com/rudironsoni/xcode-offload.
+        Docs for <code>macos-offload</code>. Source: github.com/rudironsoni/macos-offload.
       </div>
     </footer>
   </body>
